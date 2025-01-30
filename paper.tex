@@ -5,11 +5,27 @@
 \documentclass[runningheads]{llncs}
 %
 \usepackage[T1]{fontenc}
+\usepackage{xcolor}
+\usepackage{minted}
+\usepackage{amsmath,amssymb}
 % T1 fonts will be used to generate the final print and online PDFs,
 % so please use T1 fonts in your manuscript whenever possible.
 % Other font encondings may result in incorrect characters.
 %
 \usepackage{graphicx}
+\usepackage{pgfplots}
+
+\newtheorem{lem}{Lemma}
+
+\setminted[lean4]{extrakeywords={aesop cases add aesop? intro simp simp_all only split apply on_goal next rename_i safe unsafe norm constructors forward destruct norm_num done add_aesop_rules rfl subst ext}}
+\newmintinline[lean]{lean4}{bgcolor={},ignorelexererrors=true}
+\newminted[leancode]{lean4}{bgcolor={},ignorelexererrors=true,fontsize=\footnotesize,autogobble}
+\BeforeBeginEnvironment{leancode}{\begin{tcolorbox}}
+\AfterEndEnvironment{leancode}{\end{tcolorbox}}
+\usemintedstyle{xcode}
+
+\newcommand{\xcom}[1]{{\color{cyan}{Xavier: #1}} }
+\newcommand{\jcom}[1]{{\color{orange}{Jannis: #1}} }
 % Used for displaying a sample figure. If possible, figure files should
 % be included in EPS format.
 %
@@ -21,7 +37,7 @@
 %
 \begin{document}
 %
-\title{Contribution Title}
+\title{Stateful Forward Reasoning}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
@@ -35,12 +51,8 @@ Third Author\inst{3}\orcidID{2222--3333-4444-5555}}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
-\institute{Princeton University, Princeton NJ 08544, USA \and
-Springer Heidelberg, Tiergartenstr. 17, 69121 Heidelberg, Germany
-\email{lncs@springer.com}\\
-\url{http://www.springer.com/gp/computer-science/lncs} \and
-ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
-\email{\{abc,lncs\}@uni-heidelberg.de}}
+\institute{University of Munich (LMU), Munich, Germany\\
+\email{\{xavier.genereux,jannis.limpberg\}@lmu.de}}
 %
 \maketitle              % typeset the header of the contribution
 %
@@ -48,11 +60,661 @@ ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
 The abstract should briefly summarize the contents of the paper in
 150--250 words.
 
-\keywords{First keyword  \and Second keyword \and Another keyword.}
+\keywords{Forward Reasoning \and Proof Automation \and Theorem Proving.}
 \end{abstract}
 %
 %
 %
+
+\section{Introduction}
+\xcom{TODO}
+
+\xcom{ Specify the problem (user defined rules)
+ + deal with changes with local context}
+\xcom{ Talk about aesop}
+\xcom{ Do we outline the solution?}
+
+An important contextualization is that the forward reasoning procedure in this paper takes place
+within aesop's routine procedure. We will focus on examples that highlight this style of proof
+while noting that in practice, a combination of both forwards and backwards reasoning are used 
+\section{Preliminaries}
+
+\xcom{Adapt for CADE.}
+
+In what follows, we write $\Gamma \models T$ for a goal where $\Gamma$ represents the context and
+$T$ the target. In a mathematical problem, $\Gamma$ is the list of hypotheses and variable from
+which we wish to show $T$.
+
+\paragraph{Forward Rules.}
+Consider the following lemma :
+\begin{lem}[\lean{le_trans}]
+  Given a preorder on some type $\alpha$ and elements $a,b,c$ of type $\alpha$, the following holds :
+  $$a \leq b \rightarrow b \leq c \rightarrow a \leq c$$
+\end{lem}
+
+From such lemmas, we will create what we call \textit{forward rules} that represent
+the theorems on which we would like to reason in a forward manner.
+The premises $\alpha$, $ \text{Preorder } \alpha$ , $a$, $b$, $c$, $a \leq b$ and
+$b \leq c$ are separated between \textit{implied hypotheses} $\text{Preorder } \alpha$,
+$a$, $b$ and $c$ and \textit{maximal hypotheses} $a \leq b$ and $b \leq c$.
+Maximal hypotheses are also called \textit{input hypotheses}.
+
+For the premises $(x_1 : T_1),(x_2 : T_2),\dots,(x_n : T_n)$,
+the input hypotheses consist of the hypotheses for which there are no
+$j > i$ such that $T_j$ depends on $x_i$.
+
+\paragraph{Rules.}
+We write $r : \Phi \to \Psi$ for a \textit{rule} $r$ with input
+hypotheses $\Phi$ and output hypothesis $\Psi$.
+For a given rule, we assign each maximal input hypothesis a unique index
+between $1$ and $n$.
+We call theses indices \textit{slots} of $r$ and define $\text{slots}(r)$ as
+the set of slots of $r$.
+
+Given a slot $i$ and hypothesis $h : T$ with $T \equiv_{[\sigma]} T_i$
+(i.e. $\sigma$ is the substitution that results from unifying $T$ and $T_i$), 
+we say that $h$ is \textit{suitable for slot $i$} and define $\text{sub}(h) ≔ \sigma$.
+
+A \textit{shared variable} of $r$ is an input hypothesis $x_i$ such that there are
+at least two input hypothesis types $T_j$, $T_k$ in which $x_i$ occurs.
+A shared variable is necessarily a non-maximal input hypothesis.
+We also write $?x_i$ to emphasise that we interpret $x_i$ as a variable
+(and, in the code, as a metavariable).
+The set $s_r(i)$ of \textit{shared variables of a slot} $i$ of $r$ are those
+shared variables $?x$ that occur in $T_i$ and in at least one slot $j < i$.
+If the rule in question is clear from the context, we write $s(i)$.
+ 
+
+%The typical behavior is that running the procedure in a context containing suitable
+%candidates for the maximal hypotheses will add the \textit{result} of the forward
+%rule $a < c$ to the context.
+%The result is also called the \textit{output hypothesis}.
+%If we find matching hypotheses for all maximal input hypotheses in the local context,
+%we can apply the forward rule, since each non-maximal input hypothesis is uniquely determined
+%by maximal hypotheses.
+
+A \textit{match} $M$ for $r$ is a partial map from slots of $r$ to hypotheses in
+the context.
+It must satisfy the following conditions:
+\begin{itemize}
+\item For each slot $i$ of $r$, if $M(i)$ is defined, then
+    $M(i) \equiv_{[\sigma_i]} T_i$ with a substitution $\sigma_i$.
+    The domain of this substitution is a subset of the non-maximal input hypotheses.
+\item For all slots $i$ and $j$ of $r$ such that $M(i)$ and $M(j)$ are defined,
+    $\sigma_i$ and $\sigma_j$ are compatible.
+\item $M$ is downward-closed: if $M(i)$ is defined, then for any slot $j < i$ of
+    $r$, $M(j)$ is also defined.
+
+\end{itemize}
+A match of $r$ is \textit{complete} if $M(i)$ is defined for every slot $i$ of $r$, and
+\textit{incomplete} otherwise.
+The \textit{level of a match} $M$, $lvl(M)$, is the maximal $i$ such that $M(i)$ 
+is defined.
+The \textit{substitution of a match} $M$, $sub(M)$, is the union of the
+substitutions $\sigma_i$ for each $i$ such that $M_i$ is defined.
+This union is defined since the $\sigma_i$ are pairwise compatible.
+This means that $sub(M)$ contains only one assignement per variable.
+The set of \textit{shared variables of a match} $M$ is $s(lvl(M))$ the
+shared variables of $lvl(M)$.
+
+An output hypothesis is \textit{redundant} if its type is already present in the context.
+A goal is saturated with respect to a set of forward rules if all
+output hypotheses returned by the procedure are redundant.
+
+The following section introduces an algorithm to construct complete matches $M$ 
+from the context $\Gamma$.
+
+\section{Design}
+
+We now focus on the problem of constructing complete matches.
+
+\subsection{A naive design}
+
+A straightforward way to solve this problem is to simply test all the hypotheses present in the
+context against the registered rules.
+
+A few obvious improvements are then available. We can index the rules in terms of one of its
+hypothesis. This index can then be used to guarentee that at least one hypothesis in the context will
+match with a slot of the rule. A heuristic is to take the last slot as it should be more specific
+than the firsts slot of a rule.
+
+If the last slot of a rule matches a hypothesis in the context we can then test
+whether other hypotheses of the context can complete that rule.
+This is done in two steps, first we check whether the hypotheses in the context match the slot.
+If it does, we check if the substitution given by the unification is coherent with
+the preceding matched hypotheses.
+Using the same reasoning as above, we heuristically do this backwards in the slots.
+
+This particular design is fast when the final hypothesis of a rule is not present in the context. 
+However, it otherwise needs to test many potential hypothesis candidate which is quite slow.
+Another weakness of this approach is that in the eventuality that a new hypothesis appears in the
+goal, for example as the result of another rule being completed, all previous work done on one rule
+must be repeated with this new hypothesis.
+
+We call stateless this kind of approach to the problem as no previous work is saved.
+
+\subsection{An improved, stateful design}
+
+With the weaknesses of the last approach in mind, we now consider a
+\textit{stateful} solution to the problem of finding complete matches.
+The main idea is to save partial progress on complete matches.
+
+This partial progress could be simply saved as trees with root the matched
+hypothesis returned by the index.
+
+
+\paragraph{Indexing Scheme.}
+However, we decided to move towards an index that looks at all the hypotheses of 
+the rule.
+The idea is that we can better track and save information about
+which hypotheses will potentially complete which rules.
+This makes it particularly easy to maintain partial matches which, as we will see,
+are classified in terms of the instantiation of their set of shared variables.
+Another advantage is that we only need to look at each of the context's
+hypotheses once.
+This makes the procedure incremental, which is part of the stateful philosophy.
+
+In other words, the indexing is now a discrimination tree that maps 
+types $T$ to sets of pairs $(r,i)$ where $r : (x_1 : T_1) \dots (x_n : T_n) \to \Psi$
+is a rule, $i$ is a slot of $r$ and $T$ is likely unifies with $T_i$.
+
+Given hypotheses returned by this index, the next challenge comes
+down to finding a complete match of a rule.
+This means identifying compatible hypotheses within the hypotheses returned by the index.
+
+\paragraph{Matches.}
+Compatible hypotheses are hypotheses such that the instantiation of their
+shared variables are the same.
+For example, the hypotheses $h_1 : a \leq b$ and $h_2 : b \leq c$ are compatible
+because they are instantiations of $x \leq y$ and $y \leq z$ where the
+instantiation of their shared variable $\{y\}$, is the same $\{b\}$.
+A complete match is a set of hypotheses such that each of these hypothesis corresponds
+to exactly one slot and they are all compatible.
+We proceed in the following way to find a complete match.
+
+First, we order the slots such that each slot has at least one variable in common
+with the previous slots. This can be proven to always be possible. 
+\xcom{We can add the proof if we want to / have space.}
+
+We then aim to construct matches iteratively : 
+We consider each hypotheses one by one, assign them to their
+respective slots and check whether there exist compatible matches
+which they can extend.
+The comptibility check means that all the shared variables of the considered 
+hypotheses need to be compatible.
+It would be costly to do this comparison everytime and indeed
+we choose instead to maintain what we call \textit{variable maps} whose purpose
+is to save the current partial matches.
+Each variable map is associated to one shared variable, these are the
+variables dictate compatibility.
+
+\paragraph{Variable Maps.}
+Let $x$ ba a shared variable, $t$ an expression that represents an
+instantiation of that variable and $i$ an integer associated to a slot.
+We define two variable maps $\mu_x$ and $\eta_x$ that respectively take the 
+pair $(i,t)$ to $\mathbb{M}$ and $\mathbb{H}$ where 
+\begin{itemize}
+    \item $\mathbb{M}$ is the set that contains exactly those
+    partial matches which already contain assignments for all
+    slots up to $i$ and which instantiate $?x$ with $t$.
+    \item $\mathbb{H}$ is the set of hypotheses which match $T_i$ while
+    instantiating $?x$ with $t$.
+\end{itemize}
+
+Given a hypothesis $h : T$ that matches $T_i$ and $\sigma_h$,
+the map sending the variable of $T_i$ to their specific instantiation for $h$.
+The compatibility check that looks for suitable partial matches is simply computed by
+$$\bigcap_{s(i)} \mu_x \left(i - 1, \sigma_h(x)\right).$$
+
+Similarly, given a match $m$ and $\sigma_m$ the substitution map of the relevant 
+variable in $m$ then we can check for compatible hypotheses that would extend $m$
+by computing 
+$$\bigcap_{s(lvl(M) + 1)} \eta_x \left(i + 1, \sigma_m(x)\right).$$
+
+\paragraph{Example 1.}
+\xcom{WIP}
+To demonstrate the typical behavior of the algorithm we consider the
+following example which has \textbf{Lemma 1} as a rule and the hypotheses
+$(h_1 : 300 \leq 301)$ and $(h_2 : 301 \leq 302)$. \xcom{format this.}
+We will consider the hypothesis $h_2$ first for demonstration purposes.
+
+At the beginning, for the rule \textit{le\_trans}, we notice that the
+only shared variable is ${y}$. Now the hypothesis $(h_2)$ unifies both
+with slot 1 $x \leq y$ and slot 2 $y \leq z$.
+This updates the map $\eta_y(y \mapsto 302, 1)$ with $\{h_2\}$ and 
+$\eta_y(y \mapsto 301, 2)$ with $\{h_2\}$
+
+\begin{tikzpicture}[outer sep=auto, level distance=10mm, scale=0.50]
+    \node[xshift = 0] {$\eta_y$}
+      child[xshift = -20] {node {1}
+          child {node {$302$}
+            child {node {$\{h_2\}$}}}
+          child {node {$301$}
+            child {node {$\{h_1\}$}}}}
+      child[xshift = 20] {node {2}
+          child {node {$301$}
+            child {node {$\{h_2\}$}}}
+          child {node {$300$}
+            child {node {$\{h_1\}$}}}};
+    \node[xshift = 90] {$\eta_y$}
+        child[xshift = -20] {node {1}
+            child {node {$302$}
+                child {node {$\{h_2\}$}}}
+            child {node {$301$}
+                child {node {$\{h_1\}$}}}}
+        child[xshift = 20] {node {2}
+            child {node {$301$}
+                child {node {$\{h_2\}$}}}
+            child {node {$300$}
+                child {node {$\{h_1\}$}}}};
+    \node[xshift=200] {$\mu_y$}
+      child {node[xshift=-20] {1}
+          child {node {$302$}
+            child {node {$\{\{1 \mapsto h_2\}\}$}}}
+          child {node {$301$}
+            child {node {$\{\{1 \mapsto h_1\}\}$}}}}
+      child {node[xshift=20] {2}
+          child {node {$301$}
+            child {node[yshift=-2em] {$\{\{1 \mapsto h_1, 2 \mapsto h_2\}\}$}}}};
+  \end{tikzpicture}
+
+\paragraph{Example 2.}
+We now consider another example with more than one shared variable.
+Let $T_1, T_2$ be two proposition that both depend on the variable $x$ and $y$.
+For simplicity, the rule considred will be $T_1(x,y) \to T_2(x,y) \to R$.
+The hypotheses added to the context will be, in order,
+$h_1 : T_2(a,a)$, $h_2 : T_1(a,b)$ and $h_3 : T_2(a,b)$.
+
+\begin{tikzpicture}[outer sep=auto, level distance=10mm, scale=0.50]
+    \node[xshift = 0] {$\eta_x$}
+      child[xshift = -20] {node {1}
+          child {node {$a$}
+            child {node {$\{ \}$}}}
+          child {node {$b$}
+            child {node {$\{ \}$}}}}
+      child[xshift = 20] {node {2}
+          child {node {$a$}
+            child {node {$\{h_1\}$}}}
+          child {node {$b$}
+            child {node {$\{ \}$}}}};
+    \node[xshift = 90] {$\eta_y$}
+        child[xshift = -20] {node {1}
+            child {node {$a$}
+                child {node {$\{ \}$}}}
+            child {node {$b$}
+                child {node {$\{ \}$}}}}
+        child[xshift = 20] {node {2}
+            child {node {$a$}
+                child {node {$\{h_1\}$}}}
+            child {node {$b$}
+                child {node {$\{ \}$}}}};
+  \end{tikzpicture}
+
+  At this point, there are no matches so there is nothing to extend.
+  We add the next hypothesis in the queue to the variable maps.
+
+  \begin{tikzpicture}[outer sep=auto, level distance=10mm, scale=0.50]
+    \node[xshift = 0] {$\eta_x$}
+      child[xshift = -20] {node {1}
+          child {node {$a$}
+            child {node {$\{h_2\}$}}}
+          child {node {$b$}
+            child {node {$\{ \}$}}}}
+      child[xshift = 20] {node {2}
+          child {node {$a$}
+            child {node {$\{h_1\}$}}}
+          child {node {$b$}
+            child {node {$\{ \}$}}}};
+    \node[xshift = 90] {$\eta_y$}
+        child[xshift = -20] {node {1}
+            child {node {$a$}
+                child {node {$\{ \}$}}}
+            child {node {$b$}
+                child {node {$\{ h_2\}$}}}}
+        child[xshift = 20] {node {2}
+            child {node {$a$}
+                child {node {$\{h_1\}$}}}
+            child {node {$b$}
+                child {node {$\{ \}$}}}};
+  \end{tikzpicture}
+
+  As this hypothesis is in the first slot, we create the corresponding level 1 partial
+  match $m_0 = {(h_2 : T_1(a, b))}$ for which we check for suitable hypotheses that could
+  extend the match.
+  Note that  $s(lvl(m_0) + 1) = s(2)$ which is the intersection of the variables
+  appearing in the slots $i < 2$ with the variables appearing in slot $2$.
+  Thus $s(2) = \{a,b\}$ and we compute :
+  $$\bigcap_{x\in s(lvl(m_0) + 1)} \eta_x \left(i + 1, \sigma_{m_0}(x)\right)
+    = \eta_x(2, a) \cap \eta_y(2, b) = \emptyset $$
+  Since the set is empty, the match can not be currently extended.
+  We turn to the remaining hypothesis in the queue and add it to the maps.
+
+  \begin{tikzpicture}[outer sep=auto, level distance=10mm, scale=0.50]
+    \node[xshift = 0] {$\eta_x$}
+      child[xshift = -20] {node {1}
+          child {node {$a$}
+            child {node {$\{h_2\}$}}}
+          child {node {$b$}
+            child {node {$\{ \}$}}}}
+      child[xshift = 20] {node {2}
+          child {node {$a$}
+            child {node {$\{h_1, h_3\}$}}}
+          child {node {$b$}
+            child {node {$\{ \}$}}}};
+    \node[xshift = 90] {$\eta_y$}
+        child[xshift = -20] {node {1}
+            child {node {$a$}
+                child {node {$\{ \}$}}}
+            child {node {$b$}
+                child {node {$\{h_2\}$}}}}
+        child[xshift = 20] {node {2}
+            child {node {$a$}
+                child {node {$\{h_1\}$}}}
+            child {node {$b$}
+                child {node {$\{h_3\}$}}}};
+  \end{tikzpicture}
+
+  We are now ready to look for potential matches that could be extended by $h_3$.
+  In this particuliar case, since $h_3$ is in slot $2$ we look for $s(2) = \{a,b\}$.
+  Then,
+  $$\bigcap_{x\in s(2)} \mu_x \left(i - 1, \sigma_h(x)\right)
+    = \mu_x(1, a) \cap \mu_y(1, b) = \{m_0\} $$.
+
+  We have found two compatible hypotheses for our rule and we can then add the 
+  result $R$ as hypothesis to the context.
+
+
+\section{Implementation}
+
+\xcom{Here are some notes about the implementation.}
+The index used to match hypotheses with their matching rules are implemented as
+discrimination trees. A discrimination tree is a trie-like data
+structure that maps expressions to arbitrary data.
+In \cite{}, it is shown to be good solution for the problem of finding
+terms (here the types of hypotheses) that might unify with other terms
+(here the types of the input hypotheses).
+In Lean 4, discrimination trees are also used to index typeclass
+instances and simplifier lemmas.
+
+\xcom{Incrementality?}
+In lean, the type of hypotheses can sometimes change while the hypothesis'
+identifier remains the same. This means that one needs to track the types
+of the hypotheses as well. We call this tracking \textit{goal diffs}, they
+highlight the differences between old and updated goal states.
+The reference to hypotheses which changing types get deleted from the maps
+and the slot. We then add them again as a new hypothesis.
+
+The maps described in the last section are all implemented as persistent
+hash maps \xcom{Why did we not use discrimination trees? $+$
+(pers. important cause we store related forward state for many goal.) }.
+
+One of the more costly operation that we need to run multiple times is the
+unification \xcom{defeq?} between the hypotheses and the types of the
+input hypotheses associated to rules.
+We implement a variant of Lean's unification process as follows :
+The idea is that we wish to normalize the types as much as possible
+
+\xcom{precompilation}
+
+
+\section{Evaluation}
+
+Analysing the both algorithms of both the stateless and stateful approach, we 
+can draw the following conclusions about their relative performance :
+
+\begin{itemize}
+    \item The stateful algorithm maybe be expected to perform poorly when the
+    context contains many hypotheses that almost complete rules.
+    \item The stateless algorithm should perform decently well on average and 
+    especially when only the last premises are absent; so the rules get never
+    selected by the stateless index
+\end{itemize}
+
+\subsection{Results}
+\xcom{TODO: Add a comment on the effect it had on Mathlib.}
+
+We present here a number of results obtained by running synthetic tests.
+By synthetic we mean that these tests we're constructed solely for the
+purpose of demonstrating the different complexity behavior of both
+algorithms by scaling some parameter. (e.g. the number of rules.)
+The results of the tests are an average of multiple runs.
+
+In \ref{fig:erase}, the step is set up as follows: 
+Given some rule $r$ with $6$ \xcom{motivate 6} premises, 
+we run the procedure in a context with 5 of the 6 premises present.
+The numbers on the $x$ axis represent which hypothesis is missing
+in the order of consideration by the algorithm.
+In a sense, this is how \textit{deep} the algorithm investigate before
+it stops.
+At $0$, the rule are not selected by the index so the procedure stops.
+The stateless algorithm gets progressively slower the further the removed
+premises is located.
+
+The position of the missing premise has little effect on the stateful
+algorithm as the index selects the rule in all case; it only needs one
+of the premise to be present.
+The work the stateful algorithm has to do is thus close to constant
+in this scenario.
+
+
+
+\begin{figure}
+% This is the erase without precompilation for 6 premises.
+% Note I have a decent idea that would allow us to compare for multiple
+% number of premises. 
+% (Divide by the average of the stateful time to normalize.)
+\begin{tikzpicture}
+    \begin{axis}[
+        title={Depth Test},
+        xlabel={Depth},
+        ylabel={Time in ms},
+        xmin=0, xmax=6,
+        ymin=50, ymax=65,
+        xtick={0,1,2,3,4,5,6},
+        ytick={50,55,60,65},
+        legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+    ]
+    
+    \addplot[
+        color=orange,
+        mark=square,
+        ]
+        coordinates {
+        (1,50.91)(2,53.14)(3,52.91)(4,51.22)(5,55.14)(6,56.60)
+        };
+        \addlegendentry{Stateless}
+
+    \addplot[
+        color=blue,
+        mark=square,
+        ]
+        coordinates {
+        (1,56.04)(2,56.43)(3,55.58)(4,55.26)(5,54.80)(6,60.61)
+        };
+        \addlegendentry{Stateful}
+    
+    
+        
+    \end{axis}
+    \end{tikzpicture}
+\end{figure}
+
+\begin{figure}
+    % This is the erase without precompilation for 6 premises.
+    % Note I have a decent idea that would allow us to compare for multiple
+    % number of premises. 
+    % (Divide by the average of the stateful time to normalize.)
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Scaled Depth Test},
+            xlabel={Depth},
+            ylabel={Time in ms},
+            xmin=0, xmax=8,
+            ymin=0.5, ymax=2,
+            xtick={0,1,2,3,4,5,6,7,8},
+            ytick={0.75,1,1.25,1.5,1.75},
+            legend pos=north west,
+            ymajorgrids=true,
+            grid style=dashed,
+        ]
+        
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.883600)(1, 1.039751)};
+            \addlegendentry{Stateless}
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.804521)(1, 1.017893)(2, 1.022493)};
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.791528)(1, 1.015467)(2, 1.076267)(3, 1.159999)};
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.743256)(1, 0.966436)(2, 1.058876)(3, 1.133514)(4, 1.225561)};
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.770625)(1, 1.003777)(2, 1.109929)(3, 1.215171)(4, 1.305373)(5, 1.390667)};
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.759093)(1, 1.016667)(2, 1.148273)(3, 1.213138)(4, 1.342795)(5, 1.442271)(6, 1.514877)};
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.709965)(1, 0.971294)(2, 1.068745)(3, 1.179333)(4, 1.312798)(5, 1.424054)(6, 1.551690)(7, 1.628344)};
+        \addplot[color=orange,mark=square,]
+            coordinates {(0, 0.728860)(1, 1.001576)(2, 1.097472)(3, 1.219259)(4, 1.366683)(5, 1.444844)(6, 1.576972)(7, 1.668693)(8, 1.815399)};
+
+        
+        
+            
+        \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+
+\begin{figure}
+    \label{fig:erase}
+%erase with precompilation
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Depth Test},
+            xlabel={Depth},
+            ylabel={Time in ms},
+            xmin=0, xmax=6,
+            ymin=3, ymax=7,
+            xtick={0,1,2,3,4,5,6},
+            ytick={3,4,5,6,7},
+            legend pos=north west,
+            ymajorgrids=true,
+            grid style=dashed,
+        ]
+        
+        \addplot[
+            color=blue,
+            mark=square,
+            ]
+            coordinates {
+            (1, 3.715813)(2, 3.893547)(3, 3.856956)(4, 3.722684)(5, 3.714804)(6, 3.900508)
+            };
+            \addlegendentry{Stateful}
+
+        \addplot[
+            color=orange,
+            mark=square,
+            ]
+            coordinates {
+            (1, 2.993757)(2, 3.585232)(3, 3.880661)(4, 4.098640)(5, 4.322570)(6, 5.765420)
+            };
+            \addlegendentry{Stateless}
+        
+        
+            
+        \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+
+
+    \begin{figure}
+        %Indep with precompilation
+            \begin{tikzpicture}
+                \begin{axis}[
+                    title={Independance Test},
+                    xlabel={Number of Rules},
+                    ylabel={Time in ms},
+                    xmin=0, xmax=32,
+                    ymin=0, ymax=1700,
+                    ymode=log,xmode=log,
+                    log basis x=2,
+                    log basis y=2,
+                    legend pos=north west,
+                    ymajorgrids=true,
+                    grid style=dashed,
+                ]
+                
+                \addplot[
+                    color=blue,
+                    mark=square,
+                    ]
+                    coordinates {
+                    (1, 0.710963)(2, 1.266787)(4, 2.181111)(8, 4.220279)(16, 8.084744)(32, 15.683840)
+                    };
+                    \addlegendentry{Stateful}
+        
+                \addplot[
+                    color=orange,
+                    mark=square,
+                    ]
+                    coordinates {
+                    (1, 0.872730)(2, 2.100940)(4, 7.245598)(8, 35.805959)(16, 222.283526)(32, 1600.978502)
+                    };
+                    \addlegendentry{Stateless}
+                
+                
+                    
+                \end{axis}
+                \end{tikzpicture}
+            \end{figure}
+
+
+            \begin{figure}
+                %Casacade with precompilation
+                    \begin{tikzpicture}
+                        \begin{axis}[
+                            title={Casacade Test},
+                            xlabel={Number of Rules},
+                            ylabel={Time in ms},
+                            xmin=0, xmax=32,
+                            ymin=0, ymax=850,
+                            ymode=log,xmode=log,
+                            log basis x=2,
+                            log basis y=2,
+                            legend pos=north west,
+                            ymajorgrids=true,
+                            grid style=dashed,
+                        ]
+                        
+                        \addplot[
+                            color=blue,
+                            mark=square,
+                            ]
+                            coordinates {
+                            (1, 0.393011)(2, 0.730952)(4, 1.327736)(8, 3.007961)(16, 10.173689)(32, 38.892027)
+                            };
+                            \addlegendentry{Stateful}
+                
+                        \addplot[
+                            color=orange,
+                            mark=square,
+                            ]
+                            coordinates {
+                            (1, 0.464973)(2, 0.759516)(4, 1.865191)(8, 7.585588)(16, 64.374740)(32, 813.336527)
+                            };
+                            \addlegendentry{Stateless}
+                        
+                        
+                            
+                        \end{axis}
+                        \end{tikzpicture}
+                    \end{figure}
+                    
+
+\section{Related Work}
+\section{Conclusion}
+
+
 \section{First Section}
 \subsection{A Subsection Sample}
 Please note that the first paragraph of a section or subsection is
@@ -60,6 +722,7 @@ not indented. The first paragraph that follows a table, figure,
 equation etc. does not need an indent, either.
 
 Subsequent paragraphs, however, are indented.
+
 
 \subsubsection{Sample Heading (Third Level)} Only two levels of
 headings should be numbered. Lower level headings remain unnumbered;
