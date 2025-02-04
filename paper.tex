@@ -301,7 +301,7 @@ After these updates, the maps have the following state :
         child {node {$\{[h_1]\}$}}}
     %  child {node {$301$}
     %    child {node {$\{\}$}}}
-    }
+    };
     %child {node[xshift=20] {2}
     %  child {node {$301$}
     %    child {node[yshift=-2em] {$\{\}$}}}};
@@ -358,7 +358,6 @@ First, $h_1 : T_2(a,a)$ is considered :
 
 % NOTE : remove comments to get full trees.
 \begin{tikzpicture}[level distance=12mm, scale=0.50]
-    \node{}
     \node[xshift = 30] {$\eta_x$}
         %child[xshift = -20] {node {1}
         %  child {node {$a$}
@@ -383,7 +382,7 @@ First, $h_1 : T_2(a,a)$ is considered :
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}
         };
-    \node[xshift = 190, yshift = -25] {$\mu_x$}
+    \node[xshift = 190, yshift = -25] {$\mu_x$};
         %child[xshift = -20] {node {1}
         %    child {node {$a$}
         %        child {node {$\{ \}$}}}
@@ -395,7 +394,7 @@ First, $h_1 : T_2(a,a)$ is considered :
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}
         %};
-    \node[xshift = 270, yshift = -25] {$\mu_y$}
+    \node[xshift = 270, yshift = -25] {$\mu_y$};
         %child[xshift = -20] {node {1}
         %    child {node {$a$}
         %        child {node {$\{ \}$}}}
@@ -445,7 +444,7 @@ We add the next hypothesis in the queue, that is $h_2 : T_1(a,b)$, to the variab
                 child {node {$\{[h_2]\}$}}}
             %child {node {$b$}
             %   child {node {$\{ \}$}}}
-                }
+                };
         %child[xshift = 20] {node {2}
         %    child {node {$a$}
         %        child {node {$\{\}$}}}
@@ -458,7 +457,7 @@ We add the next hypothesis in the queue, that is $h_2 : T_1(a,b)$, to the variab
         %        child {node {$\{ \}$}}}
             child {node {$b$}
                 child {node {$\{[h_2]\}$}}}
-        }
+        };
         %child[xshift = 20] {node {2}
         %    child {node {$a$}
         %        child {node {$\{\}$}}}
