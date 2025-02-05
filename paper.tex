@@ -290,34 +290,36 @@ With this in mind, Algorithm \ref{alg:addhyp} and \ref{alg:updatematch} simply m
     \caption{New hypothesis}\label{alg:addhyp}
     \KwData{A hypothesis $h : T$ that matches with $T_i$.}
     \KwResult{The maps $\eta$ and $\mu$ are updated.}
-        \eIf{$i = 1$}{
-            \For{$x$ \Kwin $s(i)$}{
-                Update $\mu_x$ with $(1,\sigma_m(x)) \mapsto \mu_x(1,\sigma_m(x))\cup\{[h]\}$ (A level 1 match).\\
-            }
-            Extend match $[h]$.
-            }
-        {
+    \eIf{$i = 1$}{
+      \For{$x$ \Kwin $s(i)$}{
+        Update $\mu_x$ with $(1,\sigma_m(x)) \mapsto \mu_x(1,\sigma_m(x))\cup\{[h]\}$ (a level 1 match)
+      }
+      Extend match $[h]$
+    }{
+      \For{$x$ \Kwin $s(i)$}{
+        Update $\eta_x$ with $(i,\sigma_h(x)) \mapsto \eta_x(i,\sigma_h(x))\cup\{h\}$
+      }
+      $ms \gets \bigcap_{x \in s(i)} \mu_x \left(i - 1, \sigma_h(x)\right)$ \\
+      \For{$m$ \Kwin $ms$}{
+        $m' \gets m.\text{append } h$ \\
         \For{$x$ \Kwin $s(i)$}{
-            Update $\eta_x$ with $(i,\sigma_h(x)) \mapsto \eta_x(i,\sigma_h(x))\cup\{h\}$.\\        
-        }    
-        $ms$ \gets \ $\bigcap_{x \in s(i)} \mu_x \left(i - 1, \sigma_h(x)\right)$\;
-        \For{$m$ \Kwin $ms$}{
-            $m'$ \gets m.\text{append } h\\
-            \For{$x$ \Kwin $s(i)$}{
-            Update $\mu_x$ with $(i,\sigma_m(x)) \mapsto \mu_x(i,\sigma_m(x))\cup\{m'\}$.}\\
-            Extend match $m'$.
-        }}
+          Update $\mu_x$ with $(i,\sigma_m(x)) \mapsto \mu_x(i,\sigma_m(x))\cup\{m'\}$
+        }
+        Extend match $m'$
+      }
+    }
 \end{algorithm}
 
 \begin{algorithm}
     \caption{Extend match}\label{alg:updatematch}
     \KwData{A partial match $m$ of level $i$.}
     \KwResult{The map $\mu$ is updated.}  
-        $hs$ \gets \ $\bigcap_{x \in s(i + 1)} \eta_x \left(i + 1, \sigma_m(x)\right)$\\
+        $hs \gets \bigcap_{x \in s(i + 1)} \eta_x \left(i + 1, \sigma_m(x)\right)$ \\
         \For{$h$ \Kwin $hs$}{
-            $m'$ \gets m.\text{append } h\\
-            \For{$x$ \Kwin $s(i + 1)$}{
-            Update $\mu_x$ with $(i + 1,\sigma_{m'}(x)) \mapsto \mu_x(i + 1,\sigma_{m'}(x))\cup\{m'\}$.}\\
+            $m' \gets m.\text{append } h$\\
+            \For{$x$ \Kwin $s(i + 1)$}{%
+              Update $\mu_x$ with $(i + 1,\sigma_{m'}(x)) \mapsto \mu_x(i + 1,\sigma_{m'}(x))\cup\{m'\}$.%
+            }
             Extend match $m'$.
         }
 \end{algorithm}
