@@ -12,9 +12,11 @@
 \usepackage{pgfplots}
 \usepackage{hyperref}
 \usepackage{csquotes}
+\usepackage{algorithm2e}
 
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
+\SetKw{Kwin}{in}
 
 \newunicodechar{₁}{\ensuremath{_{1}}}
 \newunicodechar{₂}{\ensuremath{_{2}}}
@@ -78,11 +80,6 @@
 \newcommand{\xcom}[1]{{\color{cyan}{Xavier: #1}} }
 \newcommand{\jcom}[1]{{\color{orange}{Jannis: #1}} }
 
-\newcommand{\Lam}[2]{\ensuremath{\lambda\, #1,\; #2}}
-\newcommand{\All}[2]{\ensuremath{\forall\, #1,\; #2}}
-\newcommand{\mvar}[1]{\ensuremath{?#1}}
-\newcommand{\Prop}{\ensuremath{\mathrm{Prop}}}
-
 \begin{document}
 
 \title{Stateful Forward Reasoning}
@@ -145,7 +142,10 @@ We call theses indices \textit{slots} of $r$ and define $\text{slots}(r)$ as the
 
 Given a slot $i$ and hypothesis $h : T$ in the context $\Gamma$ with $T \equiv_{[\sigma]} T_i$ (i.e. $\sigma$ is the substitution that results from unifying $T$ and $T_i$), we say that $h$ is \textit{suitable for slot $i$} and define $\text{sub}(h) ≔ \sigma$.
 
-A \textit{shared variable} of $r$ is an input premise $x_i$ such that there are at least two input premise types $T_j$, $T_k$ in which $x_i$ occurs.
+A \textit{variable} is a premise $x_i$ such that there is at least one premise $T_j$ in which $x_i$ occurs.
+In what follows, $v(T)$ denote the set of variables that appear in $T$.
+
+A \textit{shared variable} of $r$ is a premise $x_i$ such that there are at least two input premise types $T_j$, $T_k$ in which $x_i$ occurs.
 A shared variable is necessarily a non-maximal input premise.
 We also write $?x_i$ to emphasise that we interpret $x_i$ as a variable (and, in the code, as a metavariable).
 The set $s_r(i)$ of \textit{shared variables of a slot} $i$ of $r$ are those shared variables $?x$ that occur in $T_i$ and in at least one slot $j < i$.
@@ -210,10 +210,8 @@ We call stateless this kind of approach to the problem as no previous work is sa
 With the weaknesses of the last approach in mind, we now consider a \textit{stateful} solution to the problem of finding complete matches.
 The main idea is to save partial progress on complete matches.
 
-This partial progress could be simply saved as trees with root the matched hypothesis returned by the index.
-
-
 \paragraph{Indexing Scheme.}
+This partial progress could be simply saved as trees with root the matched hypothesis returned by the index.
 However, we decided to move towards an index that looks at all the hypotheses of the rule.
 The idea is that we can better track and save information about which hypotheses will potentially complete which rules.
 This makes it particularly easy to maintain partial matches which, as we will see, are classified in terms of the instantiation of their set of shared variables.
@@ -230,6 +228,7 @@ Compatible hypotheses are hypotheses such that the instantiation of their shared
 For example, the hypotheses $h_1 : a \leq b$ and $h_2 : b \leq c$ are compatible because they are instantiations of $x \leq y$ and $y \leq z$ where the instantiation of their shared variable $\{y\}$, is the same $\{b\}$.
 A complete match is a set of hypotheses such that each of these hypothesis corresponds to exactly one slot and they are all compatible.
 
+Before we look at how to find complete matches, we examine exactly which premises depend on each other and for which we need to insure compatibility.
 Given a rule, we will partition its premises into subsets for which premises share a dependency.
 To be precise, consider the graph for which the input premises $T_i$ of $r$ are the vertices and whose edges are precisely the pairs of vertices $(T_i, T_j)$ for which $v(T_i) \cap v(T_j) \neq \emptyset$.
 The subsets of premises of $r$ that share a dependency are precisely the connected components of this graph.
@@ -237,6 +236,7 @@ We call these subsets of premises \textit{cluters}.
 
 %I think, if we have space, we could also add the following characterization :
 %Another characterization is the partition with the property that for two parts $C_1$ and $C_2$, $\bigcup_{T_i \in C_1} v(T_i) \cap \bigcup_{T_i \in C_2} v(T_i) = \emptyset$, and for which there do not exists a partition with the same property that has more parts.
+% Do we want to prove this?
 
 One particularity of clusters is that, for two clusters $C_1$ and $C_2$,
 $\bigcup_{T_i \in C_1} v(T_i) \cap \bigcup_{T_i \in C_2} v(T_i) = \emptyset$.
@@ -248,11 +248,16 @@ The process we follow would simply be repeated on each cluster.
 We proceed in the following way to find a complete match:
 First, we order the slots such that each slot has at least one variable in common with the previous slots.
 This can be proven to always be possible.
+(Again, we assume that there is only one cluster.)
 \xcom{We can add the proof if we want to / have space.}
 
 We then aim to construct matches iteratively: we consider each hypotheses one by one, assign them to their respective slots and check whether there exist compatible matches which they can extend.
+Whenever we find an hypothesis that fits with the premise in slot one, we create a new (level one) match.
+This process, that we will introduce in more details shortly, will be refered to as Algorithm \ref{alg:addhyp}.
+On the other hand, whenever a match is updated (or created), we also look through the hypotheses we have already came accross, this is Algorithm \ref{alg:updatematch}.
+
 The compatibility check means that all the shared variables of the considered hypotheses need to be compatible.
-It would be costly to do this comparison every time and indeed we choose instead to maintain what we call \textit{variable maps} whose purpose is to save the current partial matches.
+It would be costly to do this comparison every time and indeed we choose instead to maintain what we call \textit{variable maps} whose purpose is to save the current partial matches in terms of their instantiation.
 Each variable map is associated to one shared variable, these are the variables that dictate compatibility.
 
 \paragraph{Variable Maps.}
@@ -266,25 +271,83 @@ We define two variable maps $\mu_x$ and $\eta_x$ that respectively take the pair
 Given a hypothesis $h : T$ that matches $T_i$ and $\sigma_h$, the map sending the variable of $T_i$ to their specific instantiation for $h$.
 The compatibility check that looks for suitable partial matches is simply computed by
 \[
-  \bigcap_{s(i)} \mu_x \left(i - 1, \sigma_h(x)\right)
+  \bigcap_{x \in s(i)} \mu_x \left(i - 1, \sigma_h(x)\right).
 \]
 
-Similarly, given a match $m$ and $\sigma_m$ the substitution map of the relevant  variable in $m$ then we can check for compatible hypotheses that would extend $m$ by computing
+Similarly, given a match $m$ of level $i$ and $\sigma_m$ the substitution map of the relevant  variable in $m$ then we can check for compatible hypotheses that would extend $m$ by computing
 \[
-  \bigcap_{s(lvl(M) + 1)} \eta_x \left(i + 1, \sigma_m(x)\right)
+  \bigcap_{x \in s(i + 1)} \eta_x \left(i + 1, \sigma_m(x)\right).
 \]
+
+With this in mind, Algorithm \ref{alg:addhyp} and \ref{alg:updatematch} simply maintain these maps up to date and performs compatibility checks by computing the above intersection of sets.
+
+\begin{algorithm}
+    \caption{New hypothesis}\label{alg:addhyp}
+    \KwData{A hypothesis $h : T$ that matches with $T_i$.}
+    \KwResult{The maps $\eta$ and $\mu$ are updated.}
+        \eIf{$i = 1$}{
+            \For{$x$ \Kwin $s(i)$}{
+                Update $\mu_x$ with $(1,\sigma_m(x)) \mapsto \mu_x(1,\sigma_m(x))\cup\{[h]\}$ (A level 1 match).\\
+            }
+            Extend match $[h]$.
+            }
+        {
+        \For{$x$ \Kwin $s(i)$}{
+            Update $\eta_x$ with $(i,\sigma_h(x)) \mapsto \eta_x(i,\sigma_h(x))\cup\{h\}$.\\        
+        }    
+        $ms$ \gets \ $\bigcap_{x \in s(i)} \mu_x \left(i - 1, \sigma_h(x)\right)$\;
+        \For{$m$ \Kwin $ms$}{
+            $m'$ \gets m.\text{append } h\\
+            \For{$x$ \Kwin $s(i)$}{
+            Update $\mu_x$ with $(i,\sigma_m(x)) \mapsto \mu_x(i,\sigma_m(x))\cup\{m'\}$.}\\
+            Extend match $m'$.
+        }}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{Extend match}\label{alg:updatematch}
+    \KwData{A partial match $m$ of level $i$.}
+    \KwResult{The map $\mu$ is updated.}  
+        $hs$ \gets \ $\bigcap_{x \in s(i + 1)} \eta_x \left(i + 1, \sigma_m(x)\right)$\\
+        \For{$h$ \Kwin $hs$}{
+            $m'$ \gets m.\text{append } h\\
+            \For{$x$ \Kwin $s(i + 1)$}{
+            Update $\mu_x$ with $(i + 1,\sigma_{m'}(x)) \mapsto \mu_x(i + 1,\sigma_{m'}(x))\cup\{m'\}$.}\\
+            Extend match $m'$.
+        }
+\end{algorithm}
+
+In sum, given a hypothesis $h :T$ we
+\begin{enumerate}
+\item Save it in the variable maps $\eta_x$, for the relevant shared variables $x$.
+\item If it matches slot 1, we create a level one match.
+\item Look if we can extend existing partial matches using $h$.
+\item For any modified partial match, we look whether there exists suitable hypotheses that can extend them and repeat in case of success.
+\end{enumerate}
+
+
 
 \paragraph{Example 1.}
-\xcom{This is quite verbose, maybe I should use a more systematic approach.}
+
+\xcom{Technically, it is useless to save level 1 hyps in $\eta_x$. Should we remove them from the examples?.}
 To demonstrate the typical behavior of the algorithm we consider the following example which has \textbf{Lemma 1} as a rule and for which we add, in order, the hypotheses $h_1 : 301 \leq 302$ and $h_2 : 300 \leq 301$.
 Note that this order is choosed only for demonstration purposes.
 
-At the beginning, for the rule \textit{le\_trans}, we notice that the only shared variable is ${y}$.
+At the beginning, we feed $h_1$ to Algorithm \ref{alg:addhyp}.
+Furthmore, for the rule \textit{le\_trans}, we notice that the only shared variable is ${y}$.
 Now the hypothesis $h_1 : 301 \leq 302$ unifies both with slot 1: $x \leq y$ and slot 2: $y \leq z$.
-This updates the map $\eta_y(1, y \mapsto 302)$ with $\{h_1\}$.
+Starting with slot 1, this updates the map $\eta_y(1, y \mapsto 302)$ with $\{h_1\}$.
 An update in slot 1 also marks the begining of a new partial match and we update de match map $\mu_y$ acordingly.
-Note that after the creation of a match of level 1, we look at the hypotheses in slot 2 and check if they can extend the match to level 2. However, the instantiation of the current hypotheses in slot 2 are inconsistent with $y \mapsto 302$, so nothing can be extended.
+Note that after the creation of a match of level 1, we look at the hypotheses in slot 2 and check if they can extend the match to level 2 (Algorithm \ref{alg:updatematch}). However, the instantiation of the current hypotheses in slot 2 are inconsistent with $y \mapsto 302$, so nothing can be extended. Indeed, 
+\[
+  \bigcap_{x\in s(lvl(m_0) + 1)} \eta_x \left(i + 1, \sigma_{m_0}(x)\right) = \eta_y(2, 302) = \emptyset.
+\]
 Finally, as the hypothesis also matches slot 2, we update the map $\eta_y(2, y \mapsto 301)$ with $\{h_1\}$.
+At this point the intersection
+\[
+  \bigcap_{x\in s(2)} \eta_x \left(1, \sigma_{h}(x)\right) = \mu_y(1, 301) = \emptyset
+\]
+and at this point the algorithm is done with $h_1$ and stops.
 After these updates, the maps have the following state :
 
 \begin{center}
