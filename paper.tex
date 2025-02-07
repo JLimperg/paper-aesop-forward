@@ -55,6 +55,8 @@
 \newunicodechar{∨}{\ensuremath{\lor}}
 \newunicodechar{∪}{\ensuremath{\cup}}
 \newunicodechar{∩}{\ensuremath{\cap}}
+\newunicodechar{⊆}{\ensuremath{\subseteq}}
+\newunicodechar{⋃}{\ensuremath{\bigcup}}
 \newunicodechar{→}{\ensuremath{\rightarrow}}
 \newunicodechar{↔}{\ensuremath{\leftrightarrow}}
 \newunicodechar{↦}{\ensuremath{\mapsto}}
@@ -84,6 +86,10 @@
 \newcommand{\All}[2]{\ensuremath{\forall\, #1,\; #2}}
 \newcommand{\mvar}[1]{\ensuremath{?#1}}
 \newcommand{\Prop}{\ensuremath{\mathrm{Prop}}}
+\newcommand{\vars}{\ensuremath{\mathrm{vars}}}
+\newcommand{\dom}{\ensuremath{\mathrm{dom}}}
+\newcommand{\sub}{\ensuremath{\mathrm{sub}}}
+\newcommand{\lvl}{\ensuremath{\mathrm{lvl}}}
 
 \begin{document}
 
@@ -150,74 +156,47 @@ In addition to supporting such \emph{incremental} forward reasoning, the partial
 
 Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation in some (though not all) cases.
 The implementation, the benchmarks we used and the full evaluation data are available in a supplement to this paper (TODO ref).
-Mainline Aesop already uses the new implementation by default.
+Mainline Aesop already uses the new implementation by default (TODO true?).
 
 \section{Preliminaries}
 
-\xcom{Adapt for CADE.}
+We first introduce some terminology for matches and for forward rules (which we identify with their underlying lemmas).
+Our foundation in this paper is dependent type theory, but our technique can be adapted to other logics.
 
-In what follows, we write $\Gamma \models T$ for a goal where $\Gamma$ represents the context and $T$ the target.
-In a mathematical problem, $\Gamma$ is the list of hypotheses and variable from which we wish to show $T$.
+Given a lemma $\All{(x₁ : A₁) \dots (xₙ : Aₙ)}{B}$, the $xᵢ$ are \emph{premises} and $B$ is the lemma's \emph{conclusion}.
+The type $Aᵢ$ of the $i$-th premise may depend on (i.e., refer to) any premise $xⱼ$ with $j < i$.
+Implication $A → B$ is an abbreviation for $\All{x : A}{B}$ where $B$ does not depend on $x$.
+Propositions are (certain) types and we do not distinguish between the two concepts.
 
-\paragraph{Forward Rules.}
-Consider the following lemma:
-\begin{lem}[\lean{le_trans}]
-  Given a preorder on some type $\alpha$ and elements $a,b,c$ of type $\alpha$, the following holds:
-  $$a \leq b \rightarrow b \leq c \rightarrow a \leq c$$
-\end{lem}
+Premises on which a later premise depends are \emph{variables}.
+All other premises are \emph{input premises}.
+For example, the lemma $\All{x~y~z}{x < y → y < z → x < z}$ has variables $x, y, z$ and (unnamed) input premises of types $x < y$ and $y < z$.
+If a variable occurs in at least two premises, like $y$ above, it is \emph{shared}.
 
-From such lemmas, we will create what we call \textit{forward rules} that represent the theorems on which we would like to reason in a forward manner.
-The premises $\alpha$, $ \text{Preorder } \alpha$ , $a$, $b$, $c$, $a \leq b$ and $b \leq c$ are separated between \textit{implied premises} $\text{Preorder } \alpha$,
-$a$, $b$ and $c$ and \textit{maximal premises} $a \leq b$ and $b \leq c$.
-Maximal premises are also called \textit{input premises}.
+For a lemma with $n$ input premises, we assign to each input premise a unique number between $1$ and $n$.
+This is the premise's \emph{slot}, which we often identify with the premise itself.
+For now, we assume that the input premises are numbered consecutively, so in the above example slot 1 has type $x < y$ and slot 2 has type $y < z$.
+The \emph{shared variables of slot $i$}, $\vars(i)$ are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
 
-For the premises $(x_1 : T_1),(x_2 : T_2),\dots,(x_n : T_n)$, the input premises consist of the premises for which there are no $j > i$ such that $T_j$ depends on $x_i$.
+If $h : A$ is a hypothesis in the local context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
+Unification induces a substitution $σ$ (with $\dom(σ) ⊆ \vars(i)$) such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
+For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{sec:unification}.
 
-\paragraph{Rules.}
-We write $r : \Phi \to \Psi$ for a \textit{rule} $r$ with input premises $\Phi$ and output $\Psi$.
-For a given rule, we assign each maximal input premise a unique index between $1$ and $n$.
-We call theses indices \textit{slots} of $r$ and define $\text{slots}(r)$ as the set of slots of $r$.
+A \textit{match} $M$ for a given rule $r$ is a partial map from slots of $r$ to hypotheses.
+The map must satisfy the following conditions:
+\begin{enumerate}
+  \item\label{cond:match:matches} For each slot $i$, if $M(i)$ is defined, then $M(i)$ matches $i$.
+  \item\label{cond:match:compat} For all slots $i$ and $j$ of $r$ such that $M(i)$ and $M(j)$ are defined, the substitutions $\sub_{i}(M(i))$ and $\sub_{j}(M(j))$ are \emph{compatible}, i.e.\ they agree on all variables that occur in both $i$ and $j$.
+  \item\label{cond:match:closed} $M$ is downward-closed: if $M(i)$ is defined, then for any slot $j < i$ of $r$, $M(j)$ is also defined.
+\end{enumerate}
+The \emph{substitution of a match $M$}, $\sub(M)$, is the union of the substitutions induced by the hypotheses in $M$, i.e. $\sub(M) ≔ ⋃_{i ∈ \dom(M)}\sub_{i}(M(i))$.
+This is well-defined by requirement~\ref{cond:match:compat}.
+The \textit{level of a match $M$}, $\lvl(M)$, is the maximal $i$ such that $i ∈ \dom(M)$.
+A match for rule $r$ is \textit{complete} if $i ∈ \dom(M)$ for every slot $i$ of $r$, and \emph{partial} otherwise.
 
-Given a slot $i$ and hypothesis $h : T$ in the context $\Gamma$ with $T \equiv_{[\sigma]} T_i$ (i.e. $\sigma$ is the substitution that results from unifying $T$ and $T_i$), we say that $h$ is \textit{suitable for slot $i$} and define $\text{sub}(h) ≔ \sigma$.
-
-A \textit{variable} is a premise $x_i$ such that there is at least one premise $T_j$ in which $x_i$ occurs.
-In what follows, $v(T)$ denote the set of variables that appear in $T$.
-
-A \textit{shared variable} of $r$ is a premise $x_i$ such that there are at least two input premise types $T_j$, $T_k$ in which $x_i$ occurs.
-A shared variable is necessarily a non-maximal input premise.
-We also write $?x_i$ to emphasise that we interpret $x_i$ as a variable (and, in the code, as a metavariable).
-The set $s_r(i)$ of \textit{shared variables of a slot} $i$ of $r$ are those shared variables $?x$ that occur in $T_i$ and in at least one slot $j < i$.
-If the rule in question is clear from the context, we write $s(i)$.
- 
-
-%The typical behavior is that running the procedure in a context containing suitable
-%candidates for the maximal hypotheses will add the \textit{result} of the forward
-%rule $a < c$ to the context.
-%The result is also called the \textit{output hypothesis}.
-%If we find matching hypotheses for all maximal input premises in the local context,
-%we can apply the forward rule, since each non-maximal input premise is uniquely determined
-%by maximal hypotheses.
-
-A \textit{match} $M$ for $r$ is a partial map from slots of $r$ to hypotheses in the context.
-It must satisfy the following conditions:
-\begin{itemize}
-  \item For each slot $i$ of $r$, if $M(i)$ is defined, then $M(i) \equiv_{[\sigma_i]} T_i$ with a substitution $\sigma_i$.
-        The domain of this substitution is a subset of the non-maximal input premises.
-  \item For all slots $i$ and $j$ of $r$ such that $M(i)$ and $M(j)$ are defined, $\sigma_i$ and $\sigma_j$ are compatible.
-  \item $M$ is downward-closed: if $M(i)$ is defined, then for any slot $j < i$ of $r$, $M(j)$ is also defined.
-\end{itemize}
-
-A match of $r$ is \textit{complete} if $M(i)$ is defined for every slot $i$ of $r$, and \textit{incomplete} otherwise.
-The \textit{level of a match} $M$, $lvl(M)$, is the maximal $i$ such that $M(i)$ is defined.
-The \textit{substitution of a match} $M$, $sub(M)$, is the union of the substitutions $\sigma_i$ for each $i$ such that $M_i$ is defined.
-This union is defined since the $\sigma_i$ are pairwise compatible.
-This means that $sub(M)$ contains only one assignement per variable.
-The set of \textit{shared variables of a match} $M$ is $s(lvl(M))$ the shared variables of $lvl(M)$.
-
-An output hypothesis is \textit{redundant} if its type is already present in the context.
-A goal is saturated with respect to a set of forward rules if all output hypotheses returned by the procedure are redundant.
-
-The following section introduces an algorithm to construct complete matches $M$ from the context $\Gamma$.
+A partial match $M$ for rule $r$ corresponds to a partial application of the rule to the terms given in $\sub(M)$.
+The application is type-correct by requirements~\ref{cond:match:matches} and~\ref{cond:match:compat}.
+If $M$ is complete, then $\sub(M)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
 
 \section{Design}
 
@@ -654,7 +633,8 @@ We have found two compatible hypotheses for our rule and we can then add the res
 Implementing the preceding technique efficiently requires some care, particularly in the context of dependent type theory.
 We briefly discuss the most prominent challenges.
 
-\subsection{Unification}
+\subsection{Unification}%
+\label{sec:unification}
 
 In Lean's type theory, types contain programs and unification is expected to respect definitional equality, i.e.\ equality up to evaluation.
 For instance, a theorem with premise $P~2$, where $P$ is some predicate, should apply to a hypothesis of type $P~((\Lam{x}{x})~2)$ since the two types are definitionally equal.
@@ -696,14 +676,9 @@ This allows us to use a hash map for the instantiations while still comparing th
 We believe that this scheme is more efficient than alternative schemes relying on repeated unification.
 For example, we could use Lean's implementation of imperfect discrimination trees (TODO ref), which implement a map from expressions to arbitrary data where lookup respects definitional equality.
 However, since these discrimination trees are imperfect, they may return spurious lookup results, so whether a lookup result is valid must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
-Repeatedly performing such unifications may be more expensive than calculation one RPINF per expression (which can also be easily cached).
-
-\subsection{Indexing}
+We believe that repeatedly performing such unifications would be, on average, more expensive than calculating one RPINF (which can be cached) for each type in a goal.
 
 \subsection{Aesop Integration}
-
-\xcom{Here are some notes about the implementation.}
-The index used to match hypotheses with their matching rules are implemented as discrimination trees.
 
 \xcom{Incrementality?}
 In Lean, the type of hypotheses can sometimes change while the hypothesis' identifier remains the same.
@@ -712,9 +687,14 @@ We call this tracking \textit{goal diffs}, they highlight the differences betwee
 The reference to hypotheses which changing types get deleted from the maps and the slot.
 We then add them again as a new hypothesis.
 
+\subsection{Indexing}
+
+\subsection{Deduplication}
+
 \xcom{precompilation}
 
-\section{Evaluation}
+\section{Evaluation}%
+\label{sec:evaluation}
 
 Comparing the stateless and stateful approach, we can draw the following conclusions about their relative performance:
 
@@ -982,6 +962,8 @@ Nevertheless, our proposal bears some resemblance to the RETE algorithm (TODO re
 More distantly related are various calculi that combine backward reasoning with some form of incremental forward reasoning or simplification.
 Examples include the DPLL algorithm with its unit resolution rule (TODO ref) or incremental theory reasoners in SMT (TODO ref) and tableaux (TODO refs).
 Focusing (TODO ref) provides a proof-theoretic view on the interplay of forward and backward reasoning.
+
+\jcom{auto2}
 
 \section{Conclusion}
 
