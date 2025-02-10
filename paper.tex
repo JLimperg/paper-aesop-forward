@@ -185,9 +185,10 @@ For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{se
 A \textit{match} $M$ for a given rule $r$ is a partial map from slots of $r$ to hypotheses.
 The map must satisfy the following conditions:
 \begin{enumerate}
-  \item\label{cond:match:matches} For each slot $i$, if $M(i)$ is defined, then $M(i)$ matches $i$.
-  \item\label{cond:match:compat} For all slots $i$ and $j$ of $r$ such that $M(i)$ and $M(j)$ are defined, the substitutions $\sub_{i}(M(i))$ and $\sub_{j}(M(j))$ are \emph{compatible}, i.e.\ they agree on all variables that occur in both $i$ and $j$.
-  \item\label{cond:match:closed} $M$ is downward-closed: if $M(i)$ is defined, then for any slot $j < i$ of $r$, $M(j)$ is also defined.
+  \item\label{cond:match:matches} For each slot $i ∈ \dom(M)$, the hypothesis $M(i)$ matches $i$.
+  \item\label{cond:match:compat} For all slots $i,j ∈ \dom(M)$, the substitutions $\sub_{i}(M(i))$ and $\sub_{j}(M(j))$ are \emph{compatible}.
+        This means that for each variable $x ∈ \dom(\sub_{i}(M(i))) ∩ \dom(\sub_{j}(M(j)))$ we have $\sub_{i}(M(i))(x) = \sub_{j}(M(j))(x)$, i.e.\ the substitutions agree on all common variables.
+  \item\label{cond:match:closed} $M$ is \emph{downward-closed}: if $i ∈ \dom(M)$, then for any slot $j < i$ of $r$ we also have $j ∈ \dom(M)$.
 \end{enumerate}
 The \emph{substitution of a match $M$}, $\sub(M)$, is the union of the substitutions induced by the hypotheses in $M$, i.e. $\sub(M) ≔ ⋃_{i ∈ \dom(M)}\sub_{i}(M(i))$.
 This is well-defined by requirement~\ref{cond:match:compat}.
