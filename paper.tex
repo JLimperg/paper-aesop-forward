@@ -69,6 +69,7 @@
 \newunicodechar{⟩}{\ensuremath{\rangle}}
 \newunicodechar{⊤}{\ensuremath{\top}}
 \newunicodechar{⊥}{\ensuremath{\bot}}
+\newunicodechar{×}{\ensuremath{\times}}
 
 \newtheorem{lem}{Lemma}
 
@@ -90,6 +91,7 @@
 \newcommand{\dom}{\ensuremath{\mathrm{dom}}}
 \newcommand{\sub}{\ensuremath{\mathrm{sub}}}
 \newcommand{\lvl}{\ensuremath{\mathrm{lvl}}}
+\newcommand{\Rules}{\ensuremath{\mathcal{R}}}
 
 \begin{document}
 
@@ -199,31 +201,33 @@ A partial match $M$ for rule $r$ corresponds to a partial application of the rul
 The application is type-correct by requirements~\ref{cond:match:matches} and~\ref{cond:match:compat}.
 If $M$ is complete, then $\sub(M)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
 
-\section{Design}
+\section{Naive Forward Reasoning}
 
-We now focus on the problem of constructing complete matches.
+Prior to this work, Aesop used what we call naive forward reasoning (TODO ref).
+This approach treats a forward rule essentially like any other Aesop rule.
+Hence, given a goal $h₁ : T₁,\, \dots, hₙ : Tₙ ⊢ U$, we first query an index to determine which rules might apply to the goal.
+For forward rules, this index stores the type of the last premise (since later premises tend to be more specific).
+The index is queried for each $Tᵢ$, yielding a set of rules that have a premise which likely unifies with at least one hypothesis.
+Of these rules and any non-forward rules selected in a similar way, we select the highest-priority one.
 
-\subsection{A naive design}
+If the selected rule is a forward rule $r : \All{(x₁ : A₁) \dots (xₘ : Aₘ)}{B}$, we first unify $Aₘ$ with one of the candidate hypotheses determined by the index.
+If successful, this results in a substitution $σ$ whose domain contains $xₘ$ and any variables occurring in $Aₘ$.
+We then proceed to unify $A_{m-1}[σ]$ with the type of each hypothesis in the context, etc., until we have found a complete match for $r$ (skipping premises already determined by $σ$).
+If a premise type $A_{i}[σ]$ does not unify with any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
+This may lead to a different substitution $τ$ and therefore to matching hypotheses for $A_{i}[τ]$.
 
-A straightforward way to solve this problem is to simply test all the hypotheses present in the context against the registered rules.
+If this process yields one or more full applications $r~a₁ \dots aₘ$, we add $B[x₁ ↦ a₁, \dots, xₘ ↦ aₘ]$ as a new hypothesis unless a hypothesis of this type is already present in the context.
 
-A few obvious improvements are then available.
-We can index the rules in terms of one of its hypothesis.
-This index can then be used to guarentee that at least one hypothesis in the context will match with a slot of the rule.
-A heuristic is to take the last slot as it should be more specific than the firsts slot of a rule.
+\jcom{Add example?}
 
-If the last slot of a rule matches a hypothesis in the context we can then test whether other hypotheses of the context can complete that rule.
-This is done in two steps, first we check whether the hypotheses in the context match the slot.
-If it does, we check if the substitution given by the unification is coherent with the preceding matched hypotheses.
-Using the same reasoning as above, we heuristically do this backwards in the slots.
+This approach is efficient when the last premise of a rule is not present in the context since the rule is then never run.
+If the last premise is present, however, we perform a large number of unifications between premises and hypotheses.
+Furthermore, these unifications are repeated when we proceed to another goal with a similar context.
+In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited.
 
-This particular design is fast when the final hypothesis of a rule is not present in the context. 
-However, it otherwise needs to test many potential hypothesis candidate which is quite slow.
-Another weakness of this approach is that in the eventuality that a new hypothesis appears in the goal, for example as the result of another rule being completed, all previous work done on one rule must be repeated with this new hypothesis.
+\jcom{Mention fast subsumption paper?}
 
-We call stateless this kind of approach to the problem as no previous work is saved.
-
-\subsection{An improved, stateful design}
+\section{Incremental Forward Reasoning}
 
 With the weaknesses of the last approach in mind, we now consider a \textit{stateful} solution to the problem of finding complete matches.
 The main idea is to save partial progress on complete matches.
@@ -690,9 +694,13 @@ We then add them again as a new hypothesis.
 
 \subsection{Indexing}
 
-\subsection{Deduplication}
+\subsection{Match Redundancy}
 
-\xcom{precompilation}
+\subsection{Hypothesis Redundancy}
+
+\jcom{Mention here that we also use this for the naive algorithm.}
+
+\subsection{Precompilation}
 
 \section{Evaluation}%
 \label{sec:evaluation}
