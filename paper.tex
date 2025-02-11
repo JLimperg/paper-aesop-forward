@@ -703,6 +703,9 @@ Comparing the stateless and stateful approach, we can draw the following conclus
     \item The stateless algorithm should perform decently well on average and especially when only the last premises are absent, so the rules get never selected by the stateless index.
 \end{itemize}
 
+
+These tests were performed on a Macbook Pro with the Apple M2 Pro chip equipped with 32 Go of RAM.
+The tests showcased in this section are available here \footnote{\xcom{TODO : Link Github repo with tests.}}
 \subsection{Results}
 \xcom{TODO: Add a comment on the effect it had on Mathlib.}
 
@@ -710,103 +713,127 @@ We present here a number of results obtained by running synthetic tests.
 By synthetic we mean that these tests we're constructed solely for the purpose of demonstrating the different complexity behavior of both algorithms by scaling some parameter (e.g.\ the number of rules).
 The results of the tests are an average of multiple runs.
 
-In Fig.~\ref{fig:erase}, the step is set up as follows: given some rule $r$ with $6$ \xcom{motivate 6} premises, we run the procedure in a context with 5 of the 6 premises present.
-The numbers on the $x$ axis represent which hypothesis is missing in the order of consideration by the algorithm.
-In a sense, this is how \textit{deep} the algorithm investigate before it stops.
-At $0$, the rule are not selected by the index so the procedure stops.
-The stateless algorithm gets progressively slower the further the removed premises is located.
-
-The position of the missing premise has little effect on the stateful algorithm as the index selects the rule in all case; it only needs one of the premise to be present.
-The work the stateful algorithm has to do is thus close to constant in this scenario.
-
-
+\paragraph{Transitivity.}
 
 \begin{figure}
-% This is the erase without precompilation for 6 premises.
-% Note I have a decent idea that would allow us to compare for multiple
-% number of premises. 
-% (Divide by the average of the stateful time to normalize.)
-\begin{tikzpicture}
-    \begin{axis}[
-        title={Depth Test},
-        xlabel={Depth},
-        ylabel={Time in ms},
-        xmin=0, xmax=6,
-        ymin=50, ymax=65,
-        xtick={0,1,2,3,4,5,6},
-        ytick={50,55,60,65},
-        legend pos=north west,
-        ymajorgrids=true,
-        grid style=dashed,
-    ]
-    
-    \addplot[
-        color=orange,
-        mark=square,
-        ]
-        coordinates {
-        (1,50.91)(2,53.14)(3,52.91)(4,51.22)(5,55.14)(6,56.60)
-        };
-        \addlegendentry{Stateless}
-
-    \addplot[
-        color=blue,
-        mark=square,
-        ]
-        coordinates {
-        (1,56.04)(2,56.43)(3,55.58)(4,55.26)(5,54.80)(6,60.61)
-        };
-        \addlegendentry{Stateful}
-    
-    
-        
-    \end{axis}
-    \end{tikzpicture}
-\end{figure}
-
-\begin{figure}
-    % This is the erase without precompilation for 6 premises.
-    % Note I have a decent idea that would allow us to compare for multiple
-    % number of premises. 
-    % (Divide by the average of the stateful time to normalize.)
+    \label{fig:trans}
+    % Transitivity with precompilation.
+    % 
     \begin{tikzpicture}
         \begin{axis}[
-            title={Scaled Depth Test},
-            xlabel={Depth},
+            title={Transitivity rule},
+            xlabel={Number of hypotheses},
             ylabel={Time in ms},
-            xmin=0, xmax=8,
-            ymin=0.5, ymax=2,
-            xtick={0,1,2,3,4,5,6,7,8},
-            ytick={0.75,1,1.25,1.5,1.75},
+            xmin=2, xmax=6,
+            ymin=2^3, ymax=2^13,
+            xtick={2,3,4,5,6},
+            ytick={2^3,2^5,2^7,2^9,2^11,2^13},
+            ymode=log,
+            %xmode=log,
+            log basis y=2,
             legend pos=north west,
             ymajorgrids=true,
             grid style=dashed,
         ]
         
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.883600)(1, 1.039751)};
+        \addplot[
+            color=orange,
+            mark=square,
+            ]
+            coordinates {
+                (2, 74.566944) (3, 444.481222) (4, 811.149916) (5, 2955.663569) (6, 4703.832541) 
+            };
             \addlegendentry{Stateless}
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.804521)(1, 1.017893)(2, 1.022493)};
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.791528)(1, 1.015467)(2, 1.076267)(3, 1.159999)};
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.743256)(1, 0.966436)(2, 1.058876)(3, 1.133514)(4, 1.225561)};
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.770625)(1, 1.003777)(2, 1.109929)(3, 1.215171)(4, 1.305373)(5, 1.390667)};
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.759093)(1, 1.016667)(2, 1.148273)(3, 1.213138)(4, 1.342795)(5, 1.442271)(6, 1.514877)};
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.709965)(1, 0.971294)(2, 1.068745)(3, 1.179333)(4, 1.312798)(5, 1.424054)(6, 1.551690)(7, 1.628344)};
-        \addplot[color=orange,mark=square,]
-            coordinates {(0, 0.728860)(1, 1.001576)(2, 1.097472)(3, 1.219259)(4, 1.366683)(5, 1.444844)(6, 1.576972)(7, 1.668693)(8, 1.815399)};
-
-        
-        
-            
+        \addplot[
+            color=blue,
+            mark=square,
+            ]
+            coordinates {
+                (2, 13.089680) (3, 12.556333) (4, 14.278986) (5, 17.385902) (6, 20.682083)
+            };
+            \addlegendentry{Stateful}
         \end{axis}
         \end{tikzpicture}
     \end{figure}
+
+As a first example, which we believe highlights well the advantages of the stateful approach, we consider a scaled up version of a transitivity problem.
+As variables we choose a custom version of natural numbers.
+The reason being that Lean has special optimization procedures for its integer and thus makes evaluation quite hard on problems that use them; the unification is too quickly resolved, making algorithmic complexity difficultly distinguishable from noise.
+We aim to emulate a more general problem where the objects unified do not benefit of some special support.
+
+Given some predicate $P(x, y)$, we register the rule $r : P(x, y) \to P(y, z) \to P(x, z)$ to both algorithms.
+Then, in Figure \ref{fig:trans}, we compare them on a context containing $n$ hypotheses of the form $(h_1 : P(a, n + 1)), \dots, (h_n : P(a + n - 1, a + n))$.
+Saturating this goal adds a total of $n(n-1)/2$ hypotheses to the context.
+
+The results in Figure \ref{fig:trans} have nothing surprising : The stateless algorithm needs to go over the whole context, which contains initially $n$ hypotheses and compares them with these same $n$ hypotheses.
+This is repeated approximately for each of the $n(n-1)/2$ added hypotheses giving the expected complexity of $O(n^4)$.
+
+The stateful algorithm considers each of the problem's hypothesis, both the initial and added ones, only once.
+As the hypotheses get matched to both slots, it then compares it with at most $n$ hypotheses for each slot.
+Indeed, by the end of the saturation procedure, for a value $k$ fixed, the first slot $\eta_y(1,k)$, contains at most $n$ hypotheses of the form $h : P(m,k)$ and symmetrically for the second slot.
+This leaves an expected complexity of $O(n^2)$.
+
+There are of course obvious inefficiencies, even with the stateful algorithm.
+For this specific kind of problem, the hypotheses need only be used once and this leads to much repeated work.
+For these scenarios, users can register the rule as a \textit{destruct} rule, eliminating hypotheses after their first use.
+In this case, the complexity is linear in $n$.
+For more edge case examples like this one, consult the project's repository.
+
+\paragraph{Independent rules.}
+
+\begin{figure}
+    %Indep with precompilation
+        \begin{tikzpicture}
+            \begin{axis}[
+                title={Independance Test},
+                xlabel={Number of Rules},
+                ylabel={Time in ms},
+                xmin=0, xmax=32,
+                ymin=0, ymax=1700,
+                ymode=log,xmode=log,
+                log basis x=2,
+                log basis y=2,
+                legend pos=north west,
+                ymajorgrids=true,
+                grid style=dashed,
+            ]
+            
+            \addplot[
+                color=blue,
+                mark=square,
+                ]
+                coordinates {
+                (1, 0.710963)(2, 1.266787)(4, 2.181111)(8, 4.220279)(16, 8.084744)(32, 15.683840)
+                };
+                \addlegendentry{Stateful}
+            \addplot[
+                color=orange,
+                mark=square,
+                ]
+                coordinates {
+                (1, 0.872730)(2, 2.100940)(4, 7.245598)(8, 35.805959)(16, 222.283526)(32, 1600.978502)
+                };
+                \addlegendentry{Stateless}
+            \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+
+In the last example, part of the stateful algorithm's success stems from the fact that it could reuse a lot of its previous work.
+An obvious question is then how well does the stateful algorithm work when there is no work to be reused.
+
+Given a set of propositions $\mathcal{P} := \{P_{i,j} | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i} | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : P_{i,1}\to \dots P_{i,6} \to Q_i$.
+The procedures are then run on a context containing exactly $\mathcal{P}$.
+
+In this case, we sketch the behavior of the stateless algorithm:
+It pick a first hypothesis, $h_{i,j} : P_{i,j}$.
+If $j < 6$, the index returns nothing and it selects another hypothesis.
+For $h_{i,6} : P_{i,6}$, the rule $r_i$ is selected and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
+This gives a complexity of about $O(n^2)$.
+
+For the stateful algorithm, the hypotheses are considered one by one and match directly to the rule and the slot.
+The expected complexity is then linear in the number of rules.
+
+\paragraph{Depth of considered rules.}
 
 \begin{figure}
     \label{fig:erase}
@@ -833,7 +860,6 @@ The work the stateful algorithm has to do is thus close to constant in this scen
             (1, 3.715813)(2, 3.893547)(3, 3.856956)(4, 3.722684)(5, 3.714804)(6, 3.900508)
             };
             \addlegendentry{Stateful}
-
         \addplot[
             color=orange,
             mark=square,
@@ -842,96 +868,18 @@ The work the stateful algorithm has to do is thus close to constant in this scen
             (1, 2.993757)(2, 3.585232)(3, 3.880661)(4, 4.098640)(5, 4.322570)(6, 5.765420)
             };
             \addlegendentry{Stateless}
-        
-        
-            
         \end{axis}
         \end{tikzpicture}
     \end{figure}
 
+In Fig.~\ref{fig:erase}, the step is set up as follows: given some rule $r$ with $6$ \xcom{motivate 6} premises, we run the procedure in a context with 5 of the 6 premises present.
+The numbers on the $x$ axis represent which hypothesis is missing in the order of consideration by the algorithm.
+In a sense, this is how \textit{deep} the algorithm investigate before it stops.
+At $0$, the rule are not selected by the index so the procedure stops.
+The stateless algorithm gets progressively slower the further the removed premises is located.
 
-    \begin{figure}
-        %Indep with precompilation
-            \begin{tikzpicture}
-                \begin{axis}[
-                    title={Independance Test},
-                    xlabel={Number of Rules},
-                    ylabel={Time in ms},
-                    xmin=0, xmax=32,
-                    ymin=0, ymax=1700,
-                    ymode=log,xmode=log,
-                    log basis x=2,
-                    log basis y=2,
-                    legend pos=north west,
-                    ymajorgrids=true,
-                    grid style=dashed,
-                ]
-                
-                \addplot[
-                    color=blue,
-                    mark=square,
-                    ]
-                    coordinates {
-                    (1, 0.710963)(2, 1.266787)(4, 2.181111)(8, 4.220279)(16, 8.084744)(32, 15.683840)
-                    };
-                    \addlegendentry{Stateful}
-        
-                \addplot[
-                    color=orange,
-                    mark=square,
-                    ]
-                    coordinates {
-                    (1, 0.872730)(2, 2.100940)(4, 7.245598)(8, 35.805959)(16, 222.283526)(32, 1600.978502)
-                    };
-                    \addlegendentry{Stateless}
-                
-                
-                    
-                \end{axis}
-                \end{tikzpicture}
-            \end{figure}
-
-
-            \begin{figure}
-                %Casacade with precompilation
-                    \begin{tikzpicture}
-                        \begin{axis}[
-                            title={Casacade Test},
-                            xlabel={Number of Rules},
-                            ylabel={Time in ms},
-                            xmin=0, xmax=32,
-                            ymin=0, ymax=850,
-                            ymode=log,xmode=log,
-                            log basis x=2,
-                            log basis y=2,
-                            legend pos=north west,
-                            ymajorgrids=true,
-                            grid style=dashed,
-                        ]
-                        
-                        \addplot[
-                            color=blue,
-                            mark=square,
-                            ]
-                            coordinates {
-                            (1, 0.393011)(2, 0.730952)(4, 1.327736)(8, 3.007961)(16, 10.173689)(32, 38.892027)
-                            };
-                            \addlegendentry{Stateful}
-                
-                        \addplot[
-                            color=orange,
-                            mark=square,
-                            ]
-                            coordinates {
-                            (1, 0.464973)(2, 0.759516)(4, 1.865191)(8, 7.585588)(16, 64.374740)(32, 813.336527)
-                            };
-                            \addlegendentry{Stateless}
-                        
-                        
-                            
-                        \end{axis}
-                        \end{tikzpicture}
-                    \end{figure}
+The position of the missing premise has little effect on the stateful algorithm as the index selects the rule in all case; it only needs one of the premise to be present.
+The work the stateful algorithm has to do is thus close to constant in this scenario.
 
 \section{Related Work}
 
@@ -970,3 +918,136 @@ Focusing (TODO ref) provides a proof-theoretic view on the interplay of forward 
 TODO
 
 \end{document}
+
+
+% \begin{figure}
+%     % This is the erase without precompilation for 6 premises.
+%     % Note I have a decent idea that would allow us to compare for multiple
+%     % number of premises. 
+%     % (Divide by the average of the stateful time to normalize.)
+%     \begin{tikzpicture}
+%         \begin{axis}[
+%             title={Depth Test},
+%             xlabel={Depth},
+%             ylabel={Time in ms},
+%             xmin=0, xmax=6,
+%             ymin=50, ymax=65,
+%             xtick={0,1,2,3,4,5,6},
+%             ytick={50,55,60,65},
+%             legend pos=north west,
+%             ymajorgrids=true,
+%             grid style=dashed,
+%         ]
+        
+%         \addplot[
+%             color=orange,
+%             mark=square,
+%             ]
+%             coordinates {
+%             (1,50.91)(2,53.14)(3,52.91)(4,51.22)(5,55.14)(6,56.60)
+%             };
+%             \addlegendentry{Stateless}
+    
+%         \addplot[
+%             color=blue,
+%             mark=square,
+%             ]
+%             coordinates {
+%             (1,56.04)(2,56.43)(3,55.58)(4,55.26)(5,54.80)(6,60.61)
+%             };
+%             \addlegendentry{Stateful}
+        
+        
+            
+%         \end{axis}
+%         \end{tikzpicture}
+%     \end{figure}
+    
+%     \begin{figure}
+%         % This is the erase without precompilation for 6 premises.
+%         % Note I have a decent idea that would allow us to compare for multiple
+%         % number of premises. 
+%         % (Divide by the average of the stateful time to normalize.)
+%         \begin{tikzpicture}
+%             \begin{axis}[
+%                 title={Scaled Depth Test},
+%                 xlabel={Depth},
+%                 ylabel={Time in ms},
+%                 xmin=0, xmax=8,
+%                 ymin=0.5, ymax=2,
+%                 xtick={0,1,2,3,4,5,6,7,8},
+%                 ytick={0.75,1,1.25,1.5,1.75},
+%                 legend pos=north west,
+%                 ymajorgrids=true,
+%                 grid style=dashed,
+%             ]
+            
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.883600)(1, 1.039751)};
+%                 \addlegendentry{Stateless}
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.804521)(1, 1.017893)(2, 1.022493)};
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.791528)(1, 1.015467)(2, 1.076267)(3, 1.159999)};
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.743256)(1, 0.966436)(2, 1.058876)(3, 1.133514)(4, 1.225561)};
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.770625)(1, 1.003777)(2, 1.109929)(3, 1.215171)(4, 1.305373)(5, 1.390667)};
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.759093)(1, 1.016667)(2, 1.148273)(3, 1.213138)(4, 1.342795)(5, 1.442271)(6, 1.514877)};
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.709965)(1, 0.971294)(2, 1.068745)(3, 1.179333)(4, 1.312798)(5, 1.424054)(6, 1.551690)(7, 1.628344)};
+%             \addplot[color=orange,mark=square,]
+%                 coordinates {(0, 0.728860)(1, 1.001576)(2, 1.097472)(3, 1.219259)(4, 1.366683)(5, 1.444844)(6, 1.576972)(7, 1.668693)(8, 1.815399)};
+    
+            
+            
+                
+%             \end{axis}
+%             \end{tikzpicture}
+%         \end{figure}
+    
+    
+    
+    
+%                 \begin{figure}
+%                     %Casacade with precompilation
+%                         \begin{tikzpicture}
+%                             \begin{axis}[
+%                                 title={Casacade Test},
+%                                 xlabel={Number of Rules},
+%                                 ylabel={Time in ms},
+%                                 xmin=0, xmax=32,
+%                                 ymin=0, ymax=850,
+%                                 ymode=log,xmode=log,
+%                                 log basis x=2,
+%                                 log basis y=2,
+%                                 legend pos=north west,
+%                                 ymajorgrids=true,
+%                                 grid style=dashed,
+%                             ]
+                            
+%                             \addplot[
+%                                 color=blue,
+%                                 mark=square,
+%                                 ]
+%                                 coordinates {
+%                                 (1, 0.393011)(2, 0.730952)(4, 1.327736)(8, 3.007961)(16, 10.173689)(32, 38.892027)
+%                                 };
+%                                 \addlegendentry{Stateful}
+                    
+%                             \addplot[
+%                                 color=orange,
+%                                 mark=square,
+%                                 ]
+%                                 coordinates {
+%                                 (1, 0.464973)(2, 0.759516)(4, 1.865191)(8, 7.585588)(16, 64.374740)(32, 813.336527)
+%                                 };
+%                                 \addlegendentry{Stateless}
+                            
+                            
+                                
+%                             \end{axis}
+%                             \end{tikzpicture}
+%                         \end{figure}
+    
