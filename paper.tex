@@ -92,6 +92,12 @@
 \newcommand{\sub}{\ensuremath{\mathrm{sub}}}
 \newcommand{\lvl}{\ensuremath{\mathrm{lvl}}}
 \newcommand{\Rules}{\ensuremath{\mathcal{R}}}
+\newcommand{\Hyps}{\ensuremath{\mathcal{H}}}
+\newcommand{\States}{\ensuremath{\mathcal{S}}}
+\newcommand{\CMatches}{\ensuremath{\mathcal{C}}}
+\newcommand{\addHyp}{\ensuremath{\mathrm{addHyp}}}
+\newcommand{\delHyp}{\ensuremath{\mathrm{delHyp}}}
+\newcommand{\powerset}{\ensuremath{\mathbb{P}}}
 
 \begin{document}
 
@@ -223,14 +229,52 @@ If this process yields one or more full applications $r~a₁ \dots aₘ$, we add
 This approach is efficient when the last premise of a rule is not present in the context since the rule is then never run.
 If the last premise is present, however, we perform a large number of unifications between premises and hypotheses.
 Furthermore, these unifications are repeated when we proceed to another goal with a similar context.
-In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited.
+In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited since the naive algorithm is stateless.
 
 \jcom{Mention fast subsumption paper?}
 
 \section{Incremental Forward Reasoning}
 
-With the weaknesses of the last approach in mind, we now consider a \textit{stateful} solution to the problem of finding complete matches.
-The main idea is to save partial progress on complete matches.
+With the weaknesses of the naive approach in mind, we introduce an incremental, stateful solution to the problem of finding complete matches.
+The main idea is to store, for each goal $Γ ⊢ A$, the partial matches implied by the hypotheses in $Γ$, and to reuse these partial matches for subgoals $Δ ⊢ B$.
+This rests on the assumption that $Δ$ is likely similar to $Γ$ in practice, and that it is therefore cheaper to update the partial matches for $Γ$ to obtain those of $Δ$ than to compute those of $Δ$ from scratch.
+Our main contribution is a data structure, the \emph{partial match state}, that allows us to perform these updates efficiently.
+We first discuss the interface of this data structure and its integration into Aesop, then its construction.
+
+\subsection{Interface}
+
+We associate to each goal in Aesop's search tree a partial match state that reflects the goal's context.
+Let $\States$ be the set of forward match states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules and $\CMatches$ the set of complete matches.
+The forward match state's interface then consists of two functions:
+\begin{align*}
+  \addHyp &: \States → \Hyps → \States × \powerset(\Rules × \CMatches) \\
+  \delHyp &: \States → \Hyps → \States
+\end{align*}
+The $\addHyp$ function adds a hypothesis to the partial match state.
+Hence, if $s$ is the partial match state corresponding to context $Γ$ and $\addHyp(s, h : T) = (s', M)$, then $s'$ is the partial match state corresponding to $Γ,\, h : T$.
+Similarly, if $s$ is the partial match state corresponding to $Γ, h : T$, then $\delHyp(s, h : T)$ is the partial match state corresponding to $Γ$.
+The second output of $\addHyp$, $M$, is a set of pairs $(r, m)$ where $r$ is a rule and $m$ is a complete match for $r$.
+These are the matches that were completed by adding $h : T$.
+
+When Aesop is run on an initial goal with context $h₁ : T₁, \dots, hₙ : Tₙ$, the partial match state for it is built by starting with an empty state and applying $\addHyp$ to each hypothesis $hᵢ$.
+Afterwards, whenever an Aesop rule is run on a goal with context $Γ$, producing subgoals with contexts $Δ₁, \dots, Δₙ$, we derive the partial match state for each subgoal context $Δⱼ$ from the partial match state for $Γ$, in two steps:
+\begin{enumerate}
+  \item Apply $\delHyp$ once for each hypothesis that was deleted, i.e.\ that appears in $Γ$ but not in $Δⱼ$.
+  \item Apply $\addHyp$ once for each hypothesis that was added, i.e.\ that appears in $Δⱼ$ but not in $Γ$.
+\end{enumerate}
+Changes to a hypothesis (e.g.\ a change of its type) are treated as a deletion followed by an addition.
+
+\subsection{Partial Match State}%
+\label{sec:state}
+
+\jcom{partial match state is composed of rule states}
+
+\jcom{rule states contain variable maps}
+
+\subsection{Variable Clusters}%
+\label{sec:clusters}
+
+\jcom{=== Initial draft follows}
 
 \paragraph{Indexing Scheme.}
 This partial progress could be simply saved as trees with root the matched hypothesis returned by the index.
@@ -254,7 +298,7 @@ Before we look at how to find complete matches, we examine exactly which premise
 Given a rule, we will partition its premises into subsets for which premises share a dependency.
 To be precise, consider the graph for which the input premises $T_i$ of $r$ are the vertices and whose edges are precisely the pairs of vertices $(T_i, T_j)$ for which $v(T_i) \cap v(T_j) \neq \emptyset$.
 The subsets of premises of $r$ that share a dependency are precisely the connected components of this graph.
-We call these subsets of premises \textit{cluters}.
+We call these subsets of premises \textit{clusters}.
 
 %I think, if we have space, we could also add the following characterization :
 %Another characterization is the partition with the property that for two parts $C_1$ and $C_2$, $\bigcup_{T_i \in C_1} v(T_i) \cap \bigcup_{T_i \in C_2} v(T_i) = \emptyset$, and for which there do not exists a partition with the same property that has more parts.
@@ -683,9 +727,9 @@ For example, we could use Lean's implementation of imperfect discrimination tree
 However, since these discrimination trees are imperfect, they may return spurious lookup results, so whether a lookup result is valid must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
 We believe that repeatedly performing such unifications would be, on average, more expensive than calculating one RPINF (which can be cached) for each type in a goal.
 
-\subsection{Aesop Integration}
+\subsection{Goal Diffs}
 
-\xcom{Incrementality?}
+\jcom{Remove this whole section as too low-level?}
 In Lean, the type of hypotheses can sometimes change while the hypothesis' identifier remains the same.
 This means that one needs to track the types of the hypotheses as well.
 We call this tracking \textit{goal diffs}, they highlight the differences between old and updated goal states.
