@@ -876,11 +876,10 @@ An obvious question is then how well does the stateful algorithm work when there
 
 Given a set of propositions $\mathcal{P} := \{P_{i,j} | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i} | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : P_{i,1}\to \dots P_{i,6} \to Q_i$.
 The procedures are then run on a context containing exactly $\mathcal{P}$.
-
 In this case, we sketch the behavior of the stateless algorithm:
 It pick a first hypothesis, $h_{i,j} : P_{i,j}$.
 If $j < 6$, the index returns nothing and it selects another hypothesis.
-For $h_{i,6} : P_{i,6}$, the rule $r_i$ is selected and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
+For $h_{i,6} : P_{i,6}$, the rule $r_i$ is selected, and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
 This gives a complexity of about $O(n^2)$.
 
 For the stateful algorithm, the hypotheses are considered one by one and match directly to the rule and the slot.
