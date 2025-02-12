@@ -269,8 +269,8 @@ We first discuss the interface of this data structure and its integration into A
 \subsection{Interface}
 
 We associate to each goal in Aesop's search tree a partial match state that reflects the goal's context.
-Let $\States$ be the set of forward match states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules and $\CMatches$ the set of complete matches.
-The forward match state's interface then consists of two functions:
+Let $\States$ be the set of partial match states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
+The partial match state's interface then consists of two functions:
 \begin{align*}
   \addHyp &: \States → \Hyps → \States × \powerset(\Rules × \CMatches) \\
   \delHyp &: \States → \Hyps → \States
