@@ -117,14 +117,27 @@
 \maketitle
 
 \begin{abstract}
-  TODO
+  Many proof assistants provide automation tactics based on simple, tableau-style tree search, such as Isabelle's and Rocq's auto or Lean's Aesop.
+  These tactics solve a given goal by recursively applying \emph{rules}, which return zero or more subgoals.
+  In most cases, the rules themselves can be arbitrary tactics, so they can return any set of subgoals corresponding to an admissible inference in the prover's logic.
 
-  \keywords{Forward Reasoning \and Proof Automation \and Theorem Proving.}
+  In this setting, we consider \emph{forward rules}, which apply a given theorem, say $A → B → C$, to any goal containing hypotheses $A$ and $B$, adding $C$ as an additional hypothesis.
+  When treated naively, such rules are tried on every goal encountered during the search, leading to repeated unifications of premises $A$ and $B$ with the hypotheses of each goal.
+  Much of this work is redundant since goals often have similar hypotheses.
+
+  We present an implementation of forward rules that takes advantage of these similarities.
+  For each goal, we cache certain partial applications of forward rules in a custom data structure, the \emph{partial match state}.
+  This enables efficient updates, so if goals have similar hypotheses, we can quickly update the partial match state rather than re-running all forward rules.
+
+  Our technique is compatible with any search strategy and most logics.
+  It has been implemented in the Aesop proof search tactic for Lean.
+
+  \keywords{Forward Reasoning \and Forward Chaining \and Tactics \and Interactive Theorem Proving.}
 \end{abstract}
 
 \section{Introduction}
 
-In many proof assistants, simple automation tactics based on tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, PVS's (TODO ref) grind, Lean's (TODO ref) Aesop (TODO ref), etc.
+In many proof assistants, simple automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, PVS's (TODO ref) grind, Lean's (TODO ref) Aesop (TODO ref), etc.
 These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{local context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
 Faced with an initial goal, the tactics try various user-specified \emph{rules}, which correspond to admissible inferences in the prover's logic.
 A successful rule reduces the current goal to zero or more subgoals, which are solved recursively until either a full proof is found or no rule applies to any open goal or the search times out.
