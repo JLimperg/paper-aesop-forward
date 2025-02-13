@@ -17,6 +17,7 @@
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
 \SetKw{Kwin}{in}
+\def\orcid#1{{\href{http://orcid.org/#1}{\protect\raisebox{-1.25pt}{\protect\includegraphics{orcid.pdf}}}}}
 
 \newunicodechar{₁}{\ensuremath{_{1}}}
 \newunicodechar{₂}{\ensuremath{_{2}}}
@@ -107,8 +108,8 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 
-\author{Jannis Limperg\orcidID{0000-0002-8861-5231} \and
-  Xavier Généreux\orcidID{0000-0003-4952-9557}}
+\author{Jannis Limperg\orcid{0000-0002-8861-5231} \and
+  Xavier Généreux\orcid{0000-0003-4952-9557}}
 
 \authorrunning{J.~Limperg and X.~Généreux}
 \institute{Ludwig-Maximilians-Universität München, Munich, Germany\\
@@ -413,7 +414,7 @@ Now the hypothesis $h_1 : 301 \leq 302$ unifies both with slot 1: $x \leq y$ and
 Starting with slot 1, this updates the map $\eta_y(1, y \mapsto 302)$ with $\{h_1\}$.
 An update in slot 1 also marks the begining of a new partial match and we update de match map $\mu_y$ acordingly.
 Note that after the creation of a match of level 1, we look at the hypotheses in slot 2 and check if they can extend the match to level 2 (Algorithm \ref{alg:updatematch}). However, the instantiation of the current hypotheses in slot 2 are inconsistent with $y \mapsto 302$, so nothing can be extended. Indeed, 
-\[
+\[ %\textstyle - \nolimits 
   \bigcap_{x\in s(lvl(m_0) + 1)} \eta_x \left(i + 1, \sigma_{m_0}(x)\right) = \eta_y(2, 302) = \emptyset.
 \]
 Finally, as the hypothesis also matches slot 2, we update the map $\eta_y(2, y \mapsto 301)$ with $\{h_1\}$.
