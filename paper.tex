@@ -101,7 +101,7 @@
 
 \begin{document}
 
-\title{Incremental Forward Reasoning for White-Box Proof Search}
+\title{Incremental Forward Reasoning for White-Box~Proof~Search}
 
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
@@ -111,29 +111,41 @@
   Xavier Généreux\orcidID{0000-0003-4952-9557}}
 
 \authorrunning{J.~Limperg and X.~Généreux}
-\institute{University of Munich (LMU), Munich, Germany\\
+\institute{Ludwig-Maximilians-Universität München, Munich, Germany\\
 \email{\{jannis.limperg,xavier.genereux\}@lmu.de}}
 
 \maketitle
 
 \begin{abstract}
-  Many proof assistants provide automation tactics based on simple, tableau-style tree search, such as Isabelle's and Rocq's auto or Lean's Aesop.
-  These tactics solve a given goal by recursively applying \emph{rules}, which return zero or more subgoals.
-  In most cases, the rules themselves can be arbitrary tactics, so they can return any set of subgoals corresponding to an admissible inference in the prover's logic.
-
-  In this setting, we consider \emph{forward rules}, which apply a given theorem, say $A → B → C$, to any goal containing hypotheses $A$ and $B$, adding $C$ as an additional hypothesis.
+  Several proof assistants provide automation tactics based on tableau-style tree search, such as Isabelle's and Rocq's auto and Lean's Aesop.
+  We consider \emph{forward rules}, which apply a given theorem, say, $A → B → C$, to any goal containing hypotheses $A$ and $B$, adding $C$ as a hypothesis.
   When treated naively, such rules are tried on every goal encountered during the search, leading to repeated unifications of premises $A$ and $B$ with the hypotheses of each goal.
-  Much of this work is redundant since goals often have similar hypotheses.
-
-  We present an implementation of forward rules that takes advantage of these similarities.
-  For each goal, we cache certain partial applications of forward rules in a custom data structure, the \emph{partial match state}.
-  This enables efficient updates, so if goals have similar hypotheses, we can quickly update the partial match state rather than re-running all forward rules.
-
+  We present an approach to forward rules that takes advantage of similarities between successive goals.
+  For each goal, we cache partial applications of forward rules in a custom data structure, the \emph{partial match state}, which enables efficient updates.
   Our technique is compatible with any search strategy and most logics.
-  It has been implemented in the Aesop proof search tactic for Lean.
+  It has been implemented in Aesop.
 
   \keywords{Forward Reasoning \and Forward Chaining \and Tactics \and Interactive Theorem Proving.}
 \end{abstract}
+
+% \begin{abstract}
+%   Many proof assistants provide automation tactics based on simple, tableau-style tree search, such as Isabelle's and Rocq's auto or Lean's Aesop.
+%   These tactics solve a given goal by recursively applying \emph{rules}, which return zero or more subgoals.
+%   In most cases, the rules themselves can be arbitrary tactics, so they can return any set of subgoals corresponding to an admissible inference in the prover's logic.
+
+%   In this setting, we consider \emph{forward rules}, which apply a given theorem, say $A → B → C$, to any goal containing hypotheses $A$ and $B$, adding $C$ as an additional hypothesis.
+%   When treated naively, such rules are tried on every goal encountered during the search, leading to repeated unifications of premises $A$ and $B$ with the hypotheses of each goal.
+%   Much of this work is redundant since goals often have similar hypotheses.
+
+%   We present an implementation of forward rules that takes advantage of these similarities.
+%   For each goal, we cache certain partial applications of forward rules in a custom data structure, the \emph{partial match state}.
+%   This enables efficient updates, so if goals have similar hypotheses, we can quickly update the partial match state rather than re-running all forward rules.
+
+%   Our technique is compatible with any search strategy and most logics.
+%   It has been implemented in the Aesop proof search tactic for Lean.
+
+%   \keywords{Forward Reasoning \and Forward Chaining \and Tactics \and Interactive Theorem Proving.}
+% \end{abstract}
 
 \section{Introduction}
 
