@@ -268,11 +268,10 @@ Our main contribution is a data structure, the \emph{partial match state}, that 
 \paragraph{Partial Match State.}
 We associate to each goal in Aesop's search tree a partial match state that reflects the goal's context.
 Let $\States$ be the set of partial match states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
-The partial match state's interface then consists of two functions:
-\begin{align*}
-  \addHyp &: \States → \Hyps → \States × \powerset(\Rules × \CMatches) \\
-  \delHyp &: \States → \Hyps → \States
-\end{align*}
+The partial match state's interface then consists of two functions
+\begin{equation*}
+  \addHyp : \States → \Hyps → \States × \powerset(\Rules × \CMatches) \qquad \delHyp : \States → \Hyps → \States
+\end{equation*}
 The $\addHyp$ function adds a hypothesis to the partial match state.
 Hence, if $s$ is the partial match state corresponding to context $Γ$ and $\addHyp(s, h : T) = (s', M)$, then $s'$ is the partial match state corresponding to $Γ,\, h : T$.
 Similarly, if $s$ is the partial match state corresponding to $Γ, h : T$, then $\delHyp(s, h : T)$ is the partial match state corresponding to $Γ$.
