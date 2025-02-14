@@ -761,7 +761,7 @@ To ensure that we respect definitional equality, the instantiations in the subst
 
 \paragraph{Redundant Hypotheses.}
 When we find a complete match, we add a new hypothesis of the corresponding type $T$ to the goal, but only if there is no other hypothesis of type $T$ already present.
-To efficiently implement this check, we store in the forward match state a set containing the RPINFs of all hypotheses that have been added (and not subsequently removed) from the state.
+To efficiently implement this check, we store in the forward match state a set containing the RPINFs of all hypotheses that have been added to (and not subsequently removed from) the state.
 We modified the naive forward reasoning implementation to use the same mechanism.
 
 \section{Evaluation}%
