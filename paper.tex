@@ -416,46 +416,36 @@ To facilitate deletion, we cache this information when $h$ is added to the rule 
 When $h$ is deleted, we can then efficiently determine the relevant rule states and delete $h$ from the hypothesis index $H$ at slot $i$ and from the match index $M$ at all slots $j ≥ i$.
 
 \paragraph{Example 1.}
-\xcom{Technically, it is useless to save level 1 hyps in $\eta_x$. Should we remove them from the examples?.} \jcom{Yes, since the previous section now contains this optimisation.}
-To demonstrate the typical behavior of the algorithm we consider the following example which has \textbf{Lemma 1} as a rule and for which we add, in order, the hypotheses $h_1 : 301 \leq 302$ and $h_2 : 300 \leq 301$.
-Note that this order is choosed only for demonstration purposes.
+As a first example, consider a rule state for the transitivity rule $r : \All{x~y~z}{x ≤ y → y ≤ z → x ≤ z}$ to which we add, in order, the hypotheses
+$h₁ : 301 ≤ 302$ and $h₂ : 300 ≤ 301$.
+The rule has two slots of types $x ≤ y$ and $y ≤ z$ which share the variable $y$.
 
-At the beginning, we feed $h_1$ to Algorithm \ref{alg:addhyp}.
-Furthmore, for the rule \textit{le\_trans}, we notice that the only shared variable is ${y}$.
-Now the hypothesis $h_1 : 301 \leq 302$ unifies both with slot 1: $x \leq y$ and slot 2: $y \leq z$.
-Starting with slot 1, this updates the map $\eta_y(1, y \mapsto 302)$ with $\{h_1\}$.
-An update in slot 1 also marks the begining of a new partial match and we update de match map $\mu_y$ acordingly.
-Note that after the creation of a match of level 1, we look at the hypotheses in slot 2 and check if they can extend the match to level 2 (Algorithm \ref{alg:addmatch}). However, the instantiation of the current hypotheses in slot 2 are inconsistent with $y \mapsto 302$, so nothing can be extended. Indeed,
-\[ %\textstyle - \nolimits 
-  \bigcap_{x\in s(lvl(m_0) + 1)} \eta_x \left(i + 1, \sigma_{m_0}(x)\right) = \eta_y(2, 302) = \emptyset.
-\]
-Finally, as the hypothesis also matches slot 2, we update the map $\eta_y(2, y \mapsto 301)$ with $\{h_1\}$.
-At this point the intersection
+The hypothesis $h₁ : 301 ≤ 302$ unifies with both slots, so we run Algorithm~\ref{alg:addhyp} twice.
+For slot 1, unification yields the substitution $\{x ↦ 301, y ↦ 302\}$.
+Since this is the first slot, we start a new partial match $\{1 ↦ h₁\}$, which Algorithm~\ref{alg:addmatch} inserts into the set $M(y, 1, 302)$.
+This match cannot be extended since the hypothesis index $H$ does not contain a hypothesis for slot 2.
+
+For slot 2, unification yields the substitution $σ ≔ \{y ↦ 301, z ↦ 302\}$, so we insert $h₁$ into $H(2, y, 301)$.
+No matches at level 1 can be extended by $h₁$ since
 \[
-  \bigcap_{x\in s(2)} \eta_x \left(1, \sigma_{h}(x)\right) = \mu_y(1, 301) = \emptyset
+  \bigcap_{x \in \vars(2)} M(x, 1, σ(x)) = M(y, 1, 301) = \emptyset
 \]
-and at this point the algorithm is done with $h_1$ and stops.
-After these updates, the maps have the following state :
-
+At this point, $H$ and $M$ are in the following state.
+For brevity, we write matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ as $[h₁, \dots, hₙ]$.
+We also write $H_{y}$ instead of $H(y, \text{--}, \text{--})$, and similar for $M$.
 \begin{center}
 \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-  \node[xshift = 0] {$\eta_y$}
-    child[xshift = -20] {node {1}
-      child {node {$302$}
-        child {node {$\{h_1\}$}}}
-    %  child {node {$301$}
-    %    child {node {$\{\}$}}}
-        }
-    child[xshift = 20] {node {2}
+  \node[xshift = 0] {$H_{y}$}
+    child {node {2}
       child {node {$301$}
-        child {node {$\{h_1\}$}}}
+        child {node {$\{h₁\}$}}}
     %  child {node {$300$}
     %    child {node {$\{\}$}}}
     };
-  \node[xshift=160] {$\mu_y$}
-    child {node[xshift=-20] {1}
+  \node[xshift=160] {$M_y$}
+    child {node {1}
       child {node {$302$}
-        child {node {$\{[h_1]\}$}}}
+        child {node {$\{[h₁]\}$}}}
     %  child {node {$301$}
     %    child {node {$\{\}$}}}
     };
@@ -465,44 +455,29 @@ After these updates, the maps have the following state :
 \end{tikzpicture}
 \end{center}
 
-The next step is to add $h_2 : 300 \leq 301$ to the maps.
-Again, it unifies with both slots 1 and 2; we start by updating the map $\eta_y(1, y \mapsto 301)$ with $\{h_2\}$.
-Again, an update in slot 1 causes the creation of a level 1 match.
-We then check whether there are suitable hypotheses in slot 2 with
-with a compatible instantiation of $y$; indeed we find $\eta_y(2, y \mapsto 301) = \{h_1\}$.
-This update the match map with the level 2 match $[h_2,h_1]$.
-This is a complete match.
-The new hypothesis $h_3 : 300 \leq 302$ is added to the context.
+Now we add $h₂ : 300 ≤ 301$, which again unifies with both slots.
+For slot 1, $\sub₁(h₂)(y) = 301$, so we add the match $\{1 ↦ h₂\}$ to $M(y, 1, 301)$.
+We then check for hypotheses in slot 2 that also instantiate $y$ with $301$, and indeed we find $M(2, y, 301) = \{h₁\}$.
+Hence we return the complete match $\{1 ↦ h₂, 2 ↦ h₁\}$, which induces a new hypothesis $h₃ : 300 ≤ 302$ to be added later.
 
-The hypothesis $h_2$, also matches with slot 2.
-This causes the update $\eta_y(2, y \mapsto 300)$ with $\{h_2\}$. 
-At this point, we need to check for level 1 that would be compatible, there are none and the work with this hypothesis is done.
-
+For slot 2, we add $h₂$ to $H(y, 2, 300)$.
+There are no compatible matches at level 1, so we are done with $h₂$, yielding the following final rule state.
 \begin{center}
     \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-      \node[xshift = 0] {$\eta_y$}
-        child[xshift = -20] {node {1}
-          child {node {$302$}
-            child {node {$\{h_1\}$}}}
+      \node[xshift = 0] {$H_y$}
+        child {node {2}
           child {node {$301$}
-            child {node {$\{h_2\}$}}}
-            }
-        child[xshift = 20] {node {2}
-          child {node {$301$}
-            child {node {$\{h_1\}$}}}
+            child {node {$\{h₁\}$}}}
           child {node {$300$}
-            child {node {$\{h_2\}$}}}
+            child {node {$\{h₂\}$}}}
         };
-      \node[xshift=160] {$\mu_y$}
-        child {node[xshift=-20] {1}
-          child[xshift=-10] {node {$302$}
-            child {node {$\{[h_1]\}$}}}
-          child[xshift=10] {node {$301$}
-            child {node {$\{[h_2]\}$}}}
-        }
-        child {node[xshift=20] {2}
-          child {node {$301$}
-            child {node {$\{[h_2,h_1]\}$}}}};
+      \node[xshift=160] {$M_y$}
+        child {node {1}
+          child[xshift=-20] {node {$302$}
+            child {node {$\{[h₁]\}$}}}
+          child[xshift=20] {node {$301$}
+            child {node {$\{[h₂]\}$}}}
+        };
     \end{tikzpicture}
     \end{center}
 
