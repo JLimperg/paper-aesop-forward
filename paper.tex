@@ -482,39 +482,36 @@ There are no compatible matches at level 1, so we are done with $h₂$, yielding
     \end{center}
 
 \paragraph{Example 2.}
-We now consider another example with more than one shared variable.
-Let $T_1, T_2$ be two proposition that both depend on the variable $x$ and $y$.
-For simplicity, the rule considered will be $T_1(x,y) \to T_2(x,y) \to R$.
-The hypotheses added to the context will be, in order, $h_1 : T_2(a,a)$, $h_2 : T_1(a,b)$ and $h_3 : T_2(a,b)$.
-First, $h_1 : T_2(a,a)$ is considered :
-
+We now consider a rule $s : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
+We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $s$, starting with $h₁$:
 % NOTE : remove comments to get full trees.
-\begin{tikzpicture}[level distance=12mm, scale=0.50]
-    \node[xshift = 30] {$\eta_x$}
+\begin{center}
+  \begin{tikzpicture}[level distance=12mm, scale=0.50]
+    \node[xshift = 30] {$H_x$}
         %child[xshift = -20] {node {1}
         %  child {node {$a$}
         %    child {node {$\{ \}$}}}
         %  child {node {$b$}
         %    child {node {$\{ \}$}}}}
-        child[xshift = 40] {node {2}
+        child {node {2}
         child {node {$a$}
             child {node {$\{h_1\}$}}}
         % child {node {$b$}
         %    child {node {$\{ \}$}}}
         };
-    \node[xshift = 110] {$\eta_y$}
+    \node[xshift = 110] {$H_y$}
         %child[xshift = -20] {node {1}
         %    child {node {$a$}
         %        child {node {$\{ \}$}}}
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}}
-        child[xshift = 40] {node {2}
+        child {node {2}
             child {node {$a$}
                 child {node {$\{h_1\}$}}}
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}
         };
-    \node[xshift = 190, yshift = -25] {$\mu_x$};
+    \node[xshift = 190] {$M_x$};
         %child[xshift = -20] {node {1}
         %    child {node {$a$}
         %        child {node {$\{ \}$}}}
@@ -526,7 +523,7 @@ First, $h_1 : T_2(a,a)$ is considered :
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}
         %};
-    \node[xshift = 270, yshift = -25] {$\mu_y$};
+    \node[xshift = 270] {$M_y$};
         %child[xshift = -20] {node {1}
         %    child {node {$a$}
         %        child {node {$\{ \}$}}}
@@ -538,40 +535,29 @@ First, $h_1 : T_2(a,a)$ is considered :
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}
         %};
-\end{tikzpicture}
-
-At this point, there are no matches so there is nothing to extend.
-We add the next hypothesis in the queue, that is $h_2 : T_1(a,b)$, to the variable maps : 
-
+  \end{tikzpicture}
+\end{center}
+At this point there are no matches, so there is nothing to extend.
+We now add $h_2 : A~a~b$, which initially generates a match $m = \{1 ↦ h₂\}$ that is added to $M$:
 % NOTE : uncomment to get full trees.
-\begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-    \node[xshift = 0] {$\eta_x$}
-        child[xshift = -20] {node {1}
-            child {node {$a$}
-                child {node {$\{h_2\}$}}}
-            %child {node {$b$}
-            %    child {node {$\{ \}$}}}
-            }
-        child[xshift = 20] {node {2}
+\begin{center}
+  \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+    \node[xshift = 0] {$H_x$}
+        child {node {2}
             child {node {$a$}
                 child {node {$\{h_1\}$}}}
             %child {node {$b$}
             %    child {node {$\{ \}$}}}
             };
-    \node[xshift = 80] {$\eta_y$}
-        child[xshift = -20] {node {1}
-            %child {node {$a$}
-            %    child {node {$\{ \}$}}}
-            child {node {$b$}
-                child {node {$\{ h_2\}$}}}}
-        child[xshift = 20] {node {2}
+    \node[xshift = 80] {$H_y$}
+        child {node {2}
             child {node {$a$}
                 child {node {$\{h_1\}$}}}
             %child {node {$b$}
             %    child {node {$\{ \}$}}}
                 };
-    \node[xshift = 160, yshift = 0] {$\mu_x$}
-        child[xshift = -20] {node {1}
+    \node[xshift = 160, yshift = 0] {$M_x$}
+        child {node {1}
             child {node {$a$}
                 child {node {$\{[h_2]\}$}}}
             %child {node {$b$}
@@ -583,8 +569,8 @@ We add the next hypothesis in the queue, that is $h_2 : T_1(a,b)$, to the variab
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}
         %};
-    \node[xshift = 240, yshift = 0] {$\mu_y$}
-        child[xshift = -20] {node {1}
+    \node[xshift = 240, yshift = 0] {$M_y$}
+        child {node {1}
         %    child {node {$a$}
         %        child {node {$\{ \}$}}}
             child {node {$b$}
@@ -596,78 +582,52 @@ We add the next hypothesis in the queue, that is $h_2 : T_1(a,b)$, to the variab
         %    child {node {$b$}
         %        child {node {$\{ \}$}}}
         %};
-\end{tikzpicture}
-
-As this hypothesis is in the first slot, we create the corresponding level 1 partial match $m_0 = {(h_2 : T_1(x, y))}$ for which we check for suitable hypotheses that could extend the match.
-Note that  $s(lvl(m_0) + 1) = s(2)$ which is the intersection of the variables appearing in the slots $i < 2$ with the variables appearing in slot $2$.
-Thus $s(2) = \{x,y\}$ and we compute:
+  \end{tikzpicture}
+\end{center}
+To find hypotheses compatible with $m$, we consider the set of variables $\vars(\lvl(m) + 1)$.
+These are the variables shared between slot $\lvl(m) + 1 = 2$ and all previous slots, i.e.\ $x$ and $y$.
+Hence the compatible hypotheses are
 \[
-  \bigcap_{x\in s(lvl(m_0) + 1)} \eta_x \left(i + 1, \sigma_{m_0}(x)\right) = \eta_x(2, a) \cap \eta_y(2, b) = \emptyset
+  \bigcap_{x \in \vars(\lvl(m) + 1)} H(x, i + 1, \sub(m)(x)) = H(x, 2, a) \cap H(y, 2, b) = \emptyset
 \]
-Since the set is empty, the match can not be currently extended.
-We turn to the remaining hypothesis $h_3 : T_2(a,b)$ in the queue and add it to the maps:
-
-\begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-\node[xshift = 0] {$\eta_x$}
-    child[xshift = -20] {node {1}
-        child {node {$a$}
-            child {node {$\{h_2\}$}}}
-        %child {node {$b$}
-        %    child {node {$\{ \}$}}}
-        }
-    child[xshift = 20] {node {2}
-        child {node {$a$}
-            child {node {$\{h_1, h_3\}$}}}
-        %child {node {$b$}
-        %    child {node {$\{ \}$}}}
-        };
-\node[xshift = 80] {$\eta_y$}
-    child[xshift = -20] {node {1}
-        %child {node {$a$}
-        %    child {node {$\{ \}$}}}
-        child {node {$b$}
-            child {node {$\{h_2\}$}}}}
-    child[xshift = 20] {node {2}
-        child {node {$a$}
-            child {node {$\{h_1\}$}}}
-        child {node {$b$}
-            child {node {$\{h_3\}$}}}};
-    \node[xshift = 160, yshift = 0] {$\mu_x$}
-        child[xshift = -20] {node {1}
-            child {node {$a$}
-                child {node {$\{[h_2]\}$}}}
-            %child {node {$b$}
-            %   child {node {$\{ \}$}}}
-                }
-        child[xshift = 20] {node {2}
-            child {node {$a$}
-                child {node {$\{[h_2,h_3]\}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}
-        };
-    \node[xshift = 240, yshift = 0] {$\mu_y$}
-        child[xshift = -20] {node {1}
-        %    child {node {$a$}
-        %        child {node {$\{ \}$}}}
-            child {node {$b$}
-                child {node {$\{[h_2]\}$}}}
-        }
-        child[xshift = 20] {node {2}
-        %    child {node {$a$}
-        %        child {node {$\{\}$}}}
-            child {node {$b$}
-                child {node {$\{[h_2,h_3]\}$}}}
-        };
-\end{tikzpicture}
-
-We are now ready to look for potential matches that could be extended by $h_3$.
-In this particular case, since $h_3$ is in slot $2$ we look for $s(2) = \{x,y\}$.
-Then,
+This means the match cannot currently be extended.
+We now turn to the remaining hypothesis $h_3 : B~a~b$, adding it first to $H$:
+\begin{center}
+  \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+    \node[xshift = 0] {$H_x$}
+      child {node {2}
+          child {node {$a$}
+              child {node {$\{h_1, h_3\}$}}}
+          %child {node {$b$}
+          %    child {node {$\{ \}$}}}
+          };
+    \node[xshift = 80] {$H_y$}
+      child {node {2}
+          child {node {$a$}
+              child {node {$\{h_1\}$}}}
+          child {node {$b$}
+              child {node {$\{h_3\}$}}}};
+    \node[xshift = 160, yshift = 0] {$M_x$}
+      child {node {1}
+          child {node {$a$}
+              child {node {$\{[h_2]\}$}}}
+          %child {node {$b$}
+          %   child {node {$\{ \}$}}}
+              };
+    \node[xshift = 240, yshift = 0] {$M_y$}
+      child {node {1}
+      %    child {node {$a$}
+      %        child {node {$\{ \}$}}}
+          child {node {$b$}
+              child {node {$\{[h_2]\}$}}}
+      };
+  \end{tikzpicture}
+\end{center}
+Since $h₃$ matches slot $i = 2$, the matches that can be extended by $h₃$ are
 \[
-\bigcap_{x\in s(2)} \mu_x \left(i - 1, \sigma_h(x)\right) = \mu_x(1, a) \cap \mu_y(1, b) = \{m_0\}
+  \bigcap_{x \in \vars(i)} M(x, i - 1, \sub_{i}(x)) = M(x, 1, a) \cap M(y, 1, b) = \{[h₂]\}
 \]
-
-We have found two compatible hypotheses for our rule and we can then add the result $R$ as hypothesis to the context.
+We have found the complete match $[h₂, h₃]$ and can add a new hypothesis of type $C~a~b$.
 
 \section{Implementation}%
 \label{sec:implementation}
