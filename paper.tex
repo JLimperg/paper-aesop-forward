@@ -409,6 +409,12 @@ These subsets, called \emph{variable clusters}, share no variables with each oth
 Finding a complete match for a rule amounts to finding one complete match for each of its clusters.
 The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
 
+\paragraph{Deletion.}
+When a hypothesis $h$ is removed from a goal's context, we must update the partial match state accordingly.
+This means deleting $h$ from any rule state to which it was previously added, i.e.\ from any rule state for a rule $r$ with a slot $i$ matching $h$.
+To facilitate deletion, we cache this information when $h$ is added to the rule state.
+When $h$ is deleted, we can then efficiently determine the relevant rule states and delete $h$ from the hypothesis index $H$ at slot $i$ and from the match index $M$ at all slots $j ≥ i$.
+
 \paragraph{Example 1.}
 \xcom{Technically, it is useless to save level 1 hyps in $\eta_x$. Should we remove them from the examples?.} \jcom{Yes, since the previous section now contains this optimisation.}
 To demonstrate the typical behavior of the algorithm we consider the following example which has \textbf{Lemma 1} as a rule and for which we add, in order, the hypotheses $h_1 : 301 \leq 302$ and $h_2 : 300 \leq 301$.
@@ -687,12 +693,6 @@ Then,
 \]
 
 We have found two compatible hypotheses for our rule and we can then add the result $R$ as hypothesis to the context.
-
-\paragraph{Deletion.}
-When a hypothesis $h$ is removed from a goal's context, we must update the partial match state accordingly.
-This means deleting $h$ from any rule state to which it was previously added, i.e.\ from any rule state for a rule $r$ with a slot $i$ matching $h$.
-To facilitate deletion, we cache this information when $h$ is added to the rule state.
-When $h$ is deleted, we can then efficiently determine the relevant rule states and delete $h$ from the hypothesis index $H$ at slot $i$ and from the match index $M$ at all slots $j ≥ i$.
 
 \section{Implementation}%
 \label{sec:implementation}
