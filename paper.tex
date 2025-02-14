@@ -227,6 +227,11 @@ A partial match $M$ for rule $r$ corresponds to a partial application of the rul
 The application is type-correct by requirements~\ref{cond:match:matches} and~\ref{cond:match:compat}.
 If $M$ is complete, then $\sub(M)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
 
+Requirement~\ref{cond:match:closed} implies that we will be adding hypotheses to matches in the order in which the slots appear.
+Hence for a rule $r : A → B → C → D$, we effectively consider partial applications $r~a$ and $r~a~b$ for some $a : A$ and $b : B$, but not $r~\text{--}~b$.
+This prevents us from constructing $r~a~b$ in two different but ultimately redundant ways.
+The term orders used in various saturation calculi serve a similar function.
+
 \section{Naive Forward Reasoning}
 
 Prior to this work, Aesop used what we call naive forward reasoning (TODO ref).
