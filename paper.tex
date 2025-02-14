@@ -783,23 +783,25 @@ The results of the tests are an average of multiple runs.
 
 \begin{figure}
     \label{fig:trans}
-    % Transitivity with precompilation.
+    % Transitivity without precompilation.
     % 
     \begin{tikzpicture}
         \begin{axis}[
             title={Transitivity rule},
             xlabel={Number of hypotheses},
             ylabel={Time in ms},
-            xmin=2, xmax=6,
+            xmin=1, xmax=16,
             ymin=2^3, ymax=2^13,
-            xtick={2,3,4,5,6},
+            xtick={1,2,4,8,16},
             ytick={2^3,2^5,2^7,2^9,2^11,2^13},
+            xmode=log,
             ymode=log,
-            %xmode=log,
+            log basis x=2,
             log basis y=2,
             legend pos=north west,
             ymajorgrids=true,
             grid style=dashed,
+            legend image post style={mark=},
         ]
         
         \addplot[
@@ -807,7 +809,7 @@ The results of the tests are an average of multiple runs.
             mark=square,
             ]
             coordinates {
-                (2, 74.566944) (3, 444.481222) (4, 811.149916) (5, 2955.663569) (6, 4703.832541) 
+              (1, 7.663472) (2, 9.354750) (4, 15.768194) (8, 104.921791) (16, 1882.683111)
             };
             \addlegendentry{Stateless}
         \addplot[
@@ -815,9 +817,23 @@ The results of the tests are an average of multiple runs.
             mark=square,
             ]
             coordinates {
-                (2, 13.089680) (3, 12.556333) (4, 14.278986) (5, 17.385902) (6, 20.682083)
+              (1, 10.308541) (2, 10.704638) (4, 16.274305) (8, 38.800833) (16, 179.697681) 
             };
             \addlegendentry{Stateful}
+            \addplot[
+              color=orange,
+              mark=o,
+              ]
+              coordinates {
+                (1, 10.591138) (2, 23.881333) (4, 142.013389) (8, 1676.148375) (16, 24327.359417)
+              };
+          \addplot[
+              color=blue,
+              mark=o,
+              ]
+              coordinates {
+                (1, 13.974694) (2, 26.216833) (4, 68.953444) (8, 245.601028) (16, 1028.670680) 
+              };
         \end{axis}
         \end{tikzpicture}
     \end{figure}
@@ -848,38 +864,53 @@ For more edge case examples like this one, consult the project's repository.
 \paragraph{Independent rules.}
 
 \begin{figure}
-    %Indep with precompilation
+    %Indep without precompilation
         \begin{tikzpicture}
             \begin{axis}[
                 title={Independance Test},
                 xlabel={Number of Rules},
                 ylabel={Time in ms},
-                xmin=0, xmax=32,
-                ymin=0, ymax=1700,
+                xmin=1, xmax=32,
+                ymin=2^3, ymax=1700,
                 ymode=log,xmode=log,
                 log basis x=2,
                 log basis y=2,
                 legend pos=north west,
                 ymajorgrids=true,
                 grid style=dashed,
+                legend image post style={mark=},
             ]
             
+            \addplot[
+              color=orange,
+              mark=square,
+              ]
+              coordinates {
+                (1, 10.399958) (2, 16.426541) (4, 43.461403) (8, 205.595541) (16, 1238.090889) (32, 8927.857819) 
+              };
+              \addlegendentry{Stateless}
             \addplot[
                 color=blue,
                 mark=square,
                 ]
                 coordinates {
-                (1, 0.710963)(2, 1.266787)(4, 2.181111)(8, 4.220279)(16, 8.084744)(32, 15.683840)
+                  (1, 11.231875) (2, 12.879500) (4, 16.851930) (8, 24.666485) (16, 42.054055) (32, 76.369778) 
                 };
                 \addlegendentry{Stateful}
+                \addplot[
+              color=orange,
+              mark=o,
+              ]
+              coordinates {
+                (1, 19.405222) (2, 33.487472) (4, 80.107597) (8, 284.954791) (16, 1536.089624) (32, 10721.729861)
+              };
             \addplot[
-                color=orange,
-                mark=square,
+                color=blue,
+                mark=o,
                 ]
                 coordinates {
-                (1, 0.872730)(2, 2.100940)(4, 7.245598)(8, 35.805959)(16, 222.283526)(32, 1600.978502)
+                  (1, 25.892069) (2, 40.031930) (4, 69.446902) (8, 130.640986) (16, 260.653917) (32, 481.827902)
                 };
-                \addlegendentry{Stateless}
             \end{axis}
             \end{tikzpicture}
         \end{figure}
@@ -902,37 +933,37 @@ The expected complexity is then linear in the number of rules.
 
 \begin{figure}
     \label{fig:erase}
-%erase with precompilation
+%erase without precompilation
     \begin{tikzpicture}
         \begin{axis}[
             title={Depth Test},
             xlabel={Depth},
             ylabel={Time in ms},
-            xmin=0, xmax=6,
-            ymin=3, ymax=7,
-            xtick={0,1,2,3,4,5,6},
-            ytick={3,4,5,6,7},
+            xmin=1, xmax=6,
+            ymin=6, ymax=20,
+            xtick={1,2,3,4,5,6},
+            ytick={10,15},
             legend pos=north west,
             ymajorgrids=true,
             grid style=dashed,
+            legend image post style={mark=},
         ]
-        
-        \addplot[
-            color=blue,
-            mark=square,
-            ]
-            coordinates {
-            (1, 3.715813)(2, 3.893547)(3, 3.856956)(4, 3.722684)(5, 3.714804)(6, 3.900508)
-            };
-            \addlegendentry{Stateful}
         \addplot[
             color=orange,
             mark=square,
             ]
             coordinates {
-            (1, 2.993757)(2, 3.585232)(3, 3.880661)(4, 4.098640)(5, 4.322570)(6, 5.765420)
+              (1, 6.407973) (2, 9.831676) (3, 10.301718) (4, 10.626144) (5, 11.261754) (6, 11.795240) 
             };
             \addlegendentry{Stateless}
+        \addplot[
+          color=blue,
+          mark=square,
+          ]
+          coordinates {
+            (1, 15.835558) (2, 16.961994) (3, 16.424259) (4, 17.605449) (5, 15.691536) (6, 14.982820) 
+          };
+          \addlegendentry{Stateful}
         \end{axis}
         \end{tikzpicture}
     \end{figure}
