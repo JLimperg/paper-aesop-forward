@@ -740,21 +740,24 @@ However, since these discrimination trees are imperfect, they may return spuriou
 We believe that repeatedly performing such unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
 \paragraph{Indexing.}
-\jcom{TODO adjust}
-This partial progress could be simply saved as trees with root the matched hypothesis returned by the index.
-However, we decided to move towards an index that looks at all the hypotheses of the rule.
-The idea is that we can better track and save information about which hypotheses will potentially complete which rules.
-This makes it particularly easy to maintain partial matches which, as we will see, are classified in terms of the instantiation of their set of shared variables.
-Another advantage is that we only need to look at each of the context's hypotheses once.
-This makes the procedure incremental, which is part of the stateful philosophy.
+When adding a hypothesis $h : T$ to the partial match state, we add it to the rule state of each rule $r$ such that $h$ matches a slot of $r$.
+To optimise this operation, we use an imperfect discrimination tree index that, for each rule $r$ with slot $i$ corresponding to a premise of type $Tᵢ$, maps the type $Tᵢ$ to the pair $(r, i)$.
+Querying this index for $T$ quickly determines all rules and slots for which $h$ is likely relevant.
 
-In other words, the indexing is now a discrimination tree that maps types $T$ to sets of pairs $(r,i)$ where $r : (x_1 : T_1) \dots (x_n : T_n) \to \Psi$ is a rule, $i$ is a slot of $r$ and $T$ likely unifies with $T_i$.
+\paragraph{Match Equivalence.}
+Naively, two matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ and $\{1 ↦ h₁', \dots, n ↦ hₙ'\}$ would be considered equal if they are structurally equal, i.e.\ $h₁ = h₁'$, \dots, $hₙ = hₙ'$.
+However, consider the rule $r : \All{x~y}{P~x~y → Q~x~z → R~x}$ and the hypotheses $h₁ : P~a~b$, $h₂ : P~a~c$, $h₃ : Q~a~d$ and $h₄ : Q~a~e$.
+The complete matches $m₁ ≔ \{1 ↦ h₁, 2 ↦ h₃\}$ and $m₁' ≔ \{1 ↦ h₁, 2 ↦ h₄\}$ are structurally different, but the difference does not matter because the applications $r~h₁~h₃$ and $r~h₁~h₄$ both have type $R~a$.
+Generating both $m₁$ and $m₁'$ would therefore be redundant.
+Similarly, the partial matches $m₂ ≔ \{1 ↦ h₁\}$ and $m₂' ≔ \{1 ↦ h₂\}$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete $m₂$ and $m₂'$.
+Hence we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
+Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ with conclusion $A$ equal if $\lvl(m) = \lvl(m')$ and for each variable $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
+To ensure that we respect definitional equality, the instantiations in the substitutions are kept in RPINF.
 
-\paragraph{Match Redundancy.}
-TODO
-
-\paragraph{Hypothesis Redundancy.}
-\jcom{Mention here that we also use this for the naive algorithm.}
+\paragraph{Redundant Hypotheses.}
+When we find a complete match, we add a new hypothesis of the corresponding type $T$ to the goal, but only if there is no other hypothesis of type $T$ already present.
+To efficiently implement this check, we store in the forward match state a set containing the RPINFs of all hypotheses that have been added (and not subsequently removed) from the state.
+We modified the naive forward reasoning implementation to use the same mechanism.
 
 \section{Evaluation}%
 \label{sec:evaluation}
