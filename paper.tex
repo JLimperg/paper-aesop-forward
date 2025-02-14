@@ -1,5 +1,10 @@
 \documentclass[runningheads]{llncs}
 
+% TODO: standardise indices vs indexes
+% TODO: standardise dots after equations
+% TODO: rename variable maps to variable indices everywhere
+% TODO: standardise Rocq vs Coq
+
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
@@ -12,13 +17,19 @@
 \usepackage{pgfplots}
 \usepackage{hyperref}
 \usepackage{csquotes}
-\usepackage{algorithm2e}
+\usepackage[noend]{algorithm2e}
 
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
-\SetKw{Kwin}{in}
 \def\orcid#1{{\href{http://orcid.org/#1}{\protect\raisebox{-1.25pt}{\protect\includegraphics{orcid.pdf}}}}}
+\SetKw{KwIn}{in}
+\SetKw{KwLet}{let}
+\SetKw{KwYield}{yield}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\SetKwProg{Procedure}{Procedure}{}{}
 
+\newunicodechar{₀}{\ensuremath{_{0}}}
 \newunicodechar{₁}{\ensuremath{_{1}}}
 \newunicodechar{₂}{\ensuremath{_{2}}}
 \newunicodechar{₃}{\ensuremath{_{3}}}
@@ -98,6 +109,7 @@
 \newcommand{\CMatches}{\ensuremath{\mathcal{C}}}
 \newcommand{\addHyp}{\ensuremath{\mathrm{addHyp}}}
 \newcommand{\delHyp}{\ensuremath{\mathrm{delHyp}}}
+\newcommand{\addMatch}{\ensuremath{\mathrm{addMatch}}}
 \newcommand{\powerset}{\ensuremath{\mathbb{P}}}
 
 \begin{document}
@@ -194,7 +206,7 @@ For now, we assume that the input premises are numbered consecutively, so in the
 The \emph{shared variables of slot $i$}, $\vars(i)$ are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
 
 If $h : A$ is a hypothesis in the local context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
-Unification induces a substitution $σ$ (with $\dom(σ) ⊆ \vars(i)$) such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
+Unification induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
 For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{sec:unification}.
 
 A \textit{match} $M$ for a given rule $r$ is a partial map from slots of $r$ to hypotheses.
@@ -246,10 +258,8 @@ With the weaknesses of the naive approach in mind, we introduce an incremental, 
 The main idea is to store, for each goal $Γ ⊢ A$, the partial matches implied by the hypotheses in $Γ$, and to reuse these partial matches for subgoals $Δ ⊢ B$.
 This rests on the assumption that $Δ$ is likely similar to $Γ$ in practice, and that it is therefore cheaper to update the partial matches for $Γ$ to obtain those of $Δ$ than to compute those of $Δ$ from scratch.
 Our main contribution is a data structure, the \emph{partial match state}, that allows us to perform these updates efficiently.
-We first discuss the interface of this data structure and its integration into Aesop, then its construction.
 
-\subsection{Interface}
-
+\paragraph{Partial Match State.}
 We associate to each goal in Aesop's search tree a partial match state that reflects the goal's context.
 Let $\States$ be the set of partial match states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
 The partial match state's interface then consists of two functions:
@@ -271,139 +281,130 @@ Afterwards, whenever an Aesop rule is run on a goal with context $Γ$, producing
 \end{enumerate}
 Changes to a hypothesis (e.g.\ a change of its type) are treated as a deletion followed by an addition.
 
-\subsection{Partial Match State}%
-\label{sec:state}
+\paragraph{Rule State.}
+Partial matches are specific to each rule, so the partial match state naturally decomposes into a set of \emph{rule states}, one per rule.
+Given a goal $Γ ⊢ A$ and a rule $r$, the rule state for $r$ contains exactly the partial matches of $r$ in context $Γ$.
+A rule state supports $\addHyp$ and $\delHyp$ methods analogous to those on partial match states.
+Adding a hypothesis to a partial match state then amounts to adding it to each rule state (which may yield new complete matches for the rule); deleting a hypothesis amounts to deleting it from each rule state.
+We initially focus on how to add hypotheses, since this question motivates much of the design of the rule state data structure.
 
-\jcom{partial match state is composed of rule states}
+When a hypothesis is added to a rule state, two things can happen.
+First, the hypothesis may allow us to extend partial matches already present in the state.
+For instance, consider the rule $r : \All{x}{P~x → Q~x → R~x → S~x}$ and a rule state containing the partial match $\{1 ↦ h₁\}$, with $1$ referring to the slot of type $P~x$ and $h₁ : P~a$ for some $a$.
+Adding a new hypothesis $h₂ : Q~a$ to this rule state means that we should add to the state the extended match $\{1 ↦ h₁, 2 ↦ h₂\}$.
 
-\jcom{rule states contain variable maps}
+Second, adding a match may trigger the insertion of further matches.
+Suppose that before adding $h₁$ and $h₂$, we had already added a hypothesis $h₀ : R~a$ to the rule state.
+Once the partial match $\{1 ↦ h₁, 2 ↦ h₂\}$ arrives, we should recognise that it can be extended with $h₀$ to obtain the (complete) match $\{1 ↦ h₁, 2 ↦ h₂, 3 ↦ h₀\}$.
 
-\subsection{Variable Clusters}%
-\label{sec:clusters}
+\paragraph{Variable Indices.}
+Extending the matches above was possible only because all hypotheses are compatible on the shared variable $x$, i.e.\ they all instantiate $x$ with the same term $a$.
+In general, to extend a match $M$ with a hypothesis $h : T$ at slot $i$, we need to ensure that the substitution of $M$, $\sub(M)$, is compatible with the substitution of $h$, $\sub_{i}(h)$.
 
-\jcom{=== Initial draft follows}
+The rule state therefore uses two \emph{variable indices} $H$ and $M$ to index hypotheses and matches by their instantiations for shared variables, allowing us to quickly determine compatible pairs of matches and hypotheses.
+We could use a substitution tree (TODO ref, confirm) for this, but our custom data structure is simpler and perhaps more efficient.
+The \emph{hypothesis index} $H$ maps each triple $(x, i, t)$ (where $i > 1$ is a slot, $x ∈ \vars(i)$ a variable and $t$ a term) to the set of hypotheses $h$ added to the rule state such that $h$ matches $i$ and $\sub_{i}(h)(x) = t$.
+In other words, $H$ indexes the known hypotheses by the slots they match and the instantiations of shared variables.
+Note that hypotheses matching slot $1$ are not stored since they can never extend a match.
 
-\paragraph{Indexing Scheme.}
-This partial progress could be simply saved as trees with root the matched hypothesis returned by the index.
-However, we decided to move towards an index that looks at all the hypotheses of the rule.
-The idea is that we can better track and save information about which hypotheses will potentially complete which rules.
-This makes it particularly easy to maintain partial matches which, as we will see, are classified in terms of the instantiation of their set of shared variables.
-Another advantage is that we only need to look at each of the context's hypotheses once.
-This makes the procedure incremental, which is part of the stateful philosophy.
+Similarly, the \emph{match index} $M$ maps each triple $(x, i, t)$ to the set of partial matches $m$ (that can be derived from the hypotheses added to the rule state) such that $i = \lvl(m) $, $x ∈ \vars(i + 1)$ and $\sub(m)(x) = t$.
+Matches for the maximal slot are not stored because, being complete, they never need to be extended.
 
-In other words, the indexing is now a discrimination tree that maps types $T$ to sets of pairs $(r,i)$ where $r : (x_1 : T_1) \dots (x_n : T_n) \to \Psi$ is a rule, $i$ is a slot of $r$ and $T$ is likely unifies with $T_i$.
-
-Given hypotheses returned by this index, the next challenge comes down to finding a complete match of a rule.
-This means identifying compatible hypotheses within the hypotheses returned by the index.
-
-\paragraph{Matches.}
-Compatible hypotheses are hypotheses such that the instantiation of their shared variables are the same.
-For example, the hypotheses $h_1 : a \leq b$ and $h_2 : b \leq c$ are compatible because they are instantiations of $x \leq y$ and $y \leq z$ where the instantiation of their shared variable $\{y\}$, is the same $\{b\}$.
-A complete match is a set of hypotheses such that each of these hypothesis corresponds to exactly one slot and they are all compatible.
-
-Before we look at how to find complete matches, we examine exactly which premises depend on each other and for which we need to insure compatibility.
-Given a rule, we will partition its premises into subsets for which premises share a dependency.
-To be precise, consider the graph for which the input premises $T_i$ of $r$ are the vertices and whose edges are precisely the pairs of vertices $(T_i, T_j)$ for which $v(T_i) \cap v(T_j) \neq \emptyset$.
-The subsets of premises of $r$ that share a dependency are precisely the connected components of this graph.
-We call these subsets of premises \textit{clusters}.
-
-%I think, if we have space, we could also add the following characterization :
-%Another characterization is the partition with the property that for two parts $C_1$ and $C_2$, $\bigcup_{T_i \in C_1} v(T_i) \cap \bigcup_{T_i \in C_2} v(T_i) = \emptyset$, and for which there do not exists a partition with the same property that has more parts.
-% Do we want to prove this?
-
-One particularity of clusters is that, for two clusters $C_1$ and $C_2$,
-$\bigcup_{T_i \in C_1} v(T_i) \cap \bigcup_{T_i \in C_2} v(T_i) = \emptyset$.
-This means that compatibility need only be considered within clusters as there are no shared variables between distinct clusters.
-In other words, premises in a cluster are independent of the premises in the other clusters.
-Consequently, in what follows, we will assume without loss of generality that there is only one cluster.
-The process we follow would simply be repeated on each cluster.
-
-We proceed in the following way to find a complete match:
-First, we order the slots such that each slot has at least one variable in common with the previous slots.
-This can be proven to always be possible.
-(Again, we assume that there is only one cluster.)
-\xcom{We can add the proof if we want to / have space.}
-
-We then aim to construct matches iteratively: we consider each hypotheses one by one, assign them to their respective slots and check whether there exist compatible matches which they can extend.
-Whenever we find an hypothesis that fits with the premise in slot one, we create a new (level one) match.
-This process, that we will introduce in more details shortly, will be refered to as Algorithm \ref{alg:addhyp}.
-On the other hand, whenever a match is updated (or created), we also look through the hypotheses we have already came accross, this is Algorithm \ref{alg:updatematch}.
-
-The compatibility check means that all the shared variables of the considered hypotheses need to be compatible.
-It would be costly to do this comparison every time and indeed we choose instead to maintain what we call \textit{variable maps} whose purpose is to save the current partial matches in terms of their instantiation.
-Each variable map is associated to one shared variable, these are the variables that dictate compatibility.
-
-\paragraph{Variable Maps.}
-Let $x$ ba a shared variable, $t$ an expression that represents an instantiation of that variable and $i$ an integer associated to a slot.
-We define two variable maps $\mu_x$ and $\eta_x$ that respectively take the pair $(i,t)$ to $\mathbb{M}$ and $\mathbb{H}$ where
-\begin{itemize}
-  \item $\mathbb{M}$ is the set that contains exactly those partial matches which already contain assignments for all slots up to $i$ and which instantiate $?x$ with $t$.
-  \item $\mathbb{H}$ is the set of hypotheses which match $T_i$ while instantiating $?x$ with $t$.
-\end{itemize}
-
-Given a hypothesis $h : T$ that matches $T_i$ and $\sigma_h$, the map sending the variable of $T_i$ to their specific instantiation for $h$.
-The compatibility check that looks for suitable partial matches is simply computed by
+Given a hypothesis $h : T$ that matches slot $i > 1$ with substitution $σ = \sub_{i}(h)$, the partial matches that can be extended by $h$ are those in slot $i - 1$ whose substitutions are compatible with $σ$ on the variables $\vars(i)$ (i.e., the variables shared between $i$ and any earlier slot).
+Assuming for the moment that $\vars(i)$ is nonempty for all slots $i > 1$, these matches are
 \[
-  \bigcap_{x \in s(i)} \mu_x \left(i - 1, \sigma_h(x)\right).
+  \bigcap_{x \in \vars(i)} M(x, i-1, σ(x))
 \]
-
-Similarly, given a match $m$ of level $i$ and $\sigma_m$ the substitution map of the relevant  variable in $m$ then we can check for compatible hypotheses that would extend $m$ by computing
+Similarly, given a partial match $m$ at level $i$ with substitution $σ = \sub(m)$, the hypotheses that could extend $m$ are
 \[
-  \bigcap_{x \in s(i + 1)} \eta_x \left(i + 1, \sigma_m(x)\right).
+  \bigcap_{x \in \vars(i+1)} H(x, i+1, σ(x))
 \]
+The number of shared variables tends to be small in practice, so these intersections can be computed efficiently.
 
-With this in mind, Algorithm \ref{alg:addhyp} and \ref{alg:updatematch} simply maintain these maps up to date and performs compatibility checks by computing the above intersection of sets.
+From these observations we can directly derive two procedures for adding hypotheses and matches  to the rule state.
+The procedures maintain the invariants of the variable indices while reporting any complete matches discovered during this process.
 
 \begin{algorithm}
-    \caption{New hypothesis}\label{alg:addhyp}
-    \KwData{A hypothesis $h : T$ that matches with $T_i$.}
-    \KwResult{The maps $\eta$ and $\mu$ are updated.}
+  \SetKwInOut{Precondition}{Precondition}
+  \SetKwInOut{Postcondition}{Postcondition}
+  \Precondition{$H$ and $M$ contain the hypotheses and matches corresponding to a context $Γ$}
+  \Input{A hypothesis $h : T$ matching slot $i$ of $r$ with substitution $σ$}
+  \Output{Complete matches of $r$ in context $Γ,\, h : T$ that contain $h$}
+  \Postcondition{$H$ and $M$ contain the hypotheses and matches corresponding to $Γ,\, h : T$}
+  \BlankLine
+  \Procedure{$\mathrm{addHyp}(h : T)$}{
     \eIf{$i = 1$}{
-      \For{$x$ \Kwin $s(i)$}{
-        Update $\mu_x$ with $(1,\sigma_m(x)) \mapsto \mu_x(1,\sigma_m(x))\cup\{[h]\}$ (a level 1 match)
-      }
-      Extend match $[h]$
+      $\mathrm{addMatch}(\{1 ↦ h\})$
     }{
-      \For{$x$ \Kwin $s(i)$}{
-        Update $\eta_x$ with $(i,\sigma_h(x)) \mapsto \eta_x(i,\sigma_h(x))\cup\{h\}$
+      \For{$x$ \KwIn $\vars(i)$}{
+        Insert $h$ into the set $H(x, i, σ(h))$
       }
-      $ms \gets \bigcap_{x \in s(i)} \mu_x \left(i - 1, \sigma_h(x)\right)$ \\
-      \For{$m$ \Kwin $ms$}{
-        $m' \gets m.\text{append } h$ \\
-        \For{$x$ \Kwin $s(i)$}{
-          Update $\mu_x$ with $(i,\sigma_m(x)) \mapsto \mu_x(i,\sigma_m(x))\cup\{m'\}$
-        }
-        Extend match $m'$
+      \KwLet $\mathit{ms} ≔ \bigcap_{x \in \vars(i)} M(x, i-1, σ(x))$ \\
+      $\mathit{completeMs} \gets ∅$ \\
+      \For{$m$ \KwIn $\mathit{ms}$}{
+        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ∪ \{i ↦ h\})$
       }
+      \Return{$\mathit{completeMs}$}
     }
+  }
+  \BlankLine % without these, the caption is not offset properly
+  \BlankLine
+  \caption{Adding a hypothesis to the rule state for a rule $r$}%
+  \label{alg:addhyp}
 \end{algorithm}
 
+The rule state's $\addHyp$ method (Algorithm~\ref{alg:addhyp}) adds a hypothesis $h : T$ matching slot $i$ to the rule state.
+(If a hypothesis matches multiple slots, $\addHyp$ is called multiple times.)
+For $i = 1$, we add the singleton match $\{1 ↦ h\}$ to the rule state.
+For $i > 1$, we first insert $h$ into the hypothesis index $H$.
+Then we query the match index $M$ for matches that can be extended by $h$ and add the extended matches to the rule state.
+While adding matches, we may discover new complete matches, which are collected and returned.
+
+% TODO pre- and postcondition?
 \begin{algorithm}
-    \caption{Extend match}\label{alg:updatematch}
-    \KwData{A partial match $m$ of level $i$.}
-    \KwResult{The map $\mu$ is updated.}  
-        $hs \gets \bigcap_{x \in s(i + 1)} \eta_x \left(i + 1, \sigma_m(x)\right)$ \\
-        \For{$h$ \Kwin $hs$}{
-            $m' \gets m.\text{append } h$\\
-            \For{$x$ \Kwin $s(i + 1)$}{%
-              Update $\mu_x$ with $(i + 1,\sigma_{m'}(x)) \mapsto \mu_x(i + 1,\sigma_{m'}(x))\cup\{m'\}$.%
-            }
-            Extend match $m'$.
-        }
+  \Input{A partial match $m$ of $r$ at level $i$ with substitution $σ$}
+  \Output{A set of complete matches of $r$}
+  \BlankLine
+  \Procedure{$\mathrm{addMatch}(h : T)$}{
+    \eIf{$i$ is complete}{
+      \Return{$\{m\}$}
+    }{
+      \For{$x$ \KwIn $\vars(i + 1)$}{
+        Insert $m$ into the set $M(x, i, σ(x))$
+      }
+      \KwLet $\mathit{hs} ≔ \bigcap_{x \in \vars(i + 1)} H(x, i + 1, σ(x))$ \\
+      $\mathit{completeMs} \gets ∅$ \\
+      \For{$h$ \KwIn $\mathit{hs}$}{
+        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ∪ \{i + 1 ↦ h\})$
+      }
+      \Return{$\mathit{completeMs}$}
+    }
+  }
+  \BlankLine % without these, the caption is not offset properly
+  \BlankLine
+  \caption{Adding a match to the rule state for a rule $r$}%
+  \label{alg:addmatch}
 \end{algorithm}
 
-In sum, given a hypothesis $h :T$ we
-\begin{enumerate}
-\item Save it in the variable maps $\eta_x$, for the relevant shared variables $x$.
-\item If it matches slot 1, we create a level one match.
-\item Look if we can extend existing partial matches using $h$.
-\item For any modified partial match, we look whether there exists suitable hypotheses that can extend them and repeat in case of success.
-\end{enumerate}
+The rule state's $\addMatch$ method (Algorithm~\ref{alg:addmatch}) adds a match $m$ with level $i = \lvl(m)$ to the rule state.
+If $m$ is already complete, it is returned.
+Otherwise $m$ is inserted into $M$ and we query $H$ for hypotheses that can extend $m$.
+Any extended matches thus produced are added to the rule state recursively.
 
+\paragraph{Variable Clusters.}
+We have so far assumed that for each slot $i > 1$, the set of shared variables $\vars(i)$ is nonempty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
+This assumption is violated for rules such as $\All{x~y}{P~x → Q~y → R~x~y}$: slot 2 ($Q~y$) shares no variables with slot 1 ($P~x$).
+As a result, our above algorithms fail.
+Suppose we are adding the hypothesis $h₂ : Q~b$, having already added the hypothesis $h₁ : P~a$ and hence the partial match $\{1 ↦ h₁\}$.
+The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M(x, i-1, σ(x)) = ∅$, but in fact the match $\{1 ↦ h₁\}$ can be extended with $h₂$.
+In fact, any match at level 1 can be extended with any hypothesis matching slot 2 since the two slots are independent.
 
+To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, using a construction from (TODO ref).
+These subsets, called \emph{variable clusters}, share no variables with each other, so each can be treated as a separate rule with its own rule state.
+Finding a complete match for a rule amounts to finding one complete match for each of its clusters.
+The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
 
 \paragraph{Example 1.}
-
 \xcom{Technically, it is useless to save level 1 hyps in $\eta_x$. Should we remove them from the examples?.}
 To demonstrate the typical behavior of the algorithm we consider the following example which has \textbf{Lemma 1} as a rule and for which we add, in order, the hypotheses $h_1 : 301 \leq 302$ and $h_2 : 300 \leq 301$.
 Note that this order is choosed only for demonstration purposes.
@@ -413,7 +414,7 @@ Furthmore, for the rule \textit{le\_trans}, we notice that the only shared varia
 Now the hypothesis $h_1 : 301 \leq 302$ unifies both with slot 1: $x \leq y$ and slot 2: $y \leq z$.
 Starting with slot 1, this updates the map $\eta_y(1, y \mapsto 302)$ with $\{h_1\}$.
 An update in slot 1 also marks the begining of a new partial match and we update de match map $\mu_y$ acordingly.
-Note that after the creation of a match of level 1, we look at the hypotheses in slot 2 and check if they can extend the match to level 2 (Algorithm \ref{alg:updatematch}). However, the instantiation of the current hypotheses in slot 2 are inconsistent with $y \mapsto 302$, so nothing can be extended. Indeed, 
+Note that after the creation of a match of level 1, we look at the hypotheses in slot 2 and check if they can extend the match to level 2 (Algorithm \ref{alg:addmatch}). However, the instantiation of the current hypotheses in slot 2 are inconsistent with $y \mapsto 302$, so nothing can be extended. Indeed,
 \[ %\textstyle - \nolimits 
   \bigcap_{x\in s(lvl(m_0) + 1)} \eta_x \left(i + 1, \sigma_{m_0}(x)\right) = \eta_y(2, 302) = \emptyset.
 \]
@@ -684,7 +685,8 @@ We have found two compatible hypotheses for our rule and we can then add the res
 
 \jcom{TODO: deletion}
 
-\section{Implementation}
+\section{Implementation}%
+\label{sec:implementation}
 
 Implementing the preceding technique efficiently requires some care, particularly in the context of dependent type theory.
 We briefly discuss the most prominent challenges.
@@ -705,6 +707,8 @@ It also limits the power of forward reasoning since
 We also need to account for higher-order unification problems: $Q~\mvar{f}$, where $Q$ is a predicate over functions and $\mvar{f}$ is a function variable, should unify with $Q~(\Lam{x}{x})$.
 Since higher-order unification is undecidable and does not admit most general unifiers (TODO ref), we use instead a unification algorithm provided by Lean that is complete for first-order unification problems and heuristically solves some higher-order problems as well.
 This makes our technique incomplete in the sense that some theorem instantiations will be missed, but since the same unification algorithm is used throughout Lean, users are at least well-acquainted with this source of incompleteness.
+
+\jcom{TODO: mvars in hyps are treated as rigid}
 
 \subsection{Data Representation}
 
@@ -744,6 +748,17 @@ The reference to hypotheses which changing types get deleted from the maps and t
 We then add them again as a new hypothesis.
 
 \subsection{Indexing}
+
+\jcom{TODO adjust}
+
+This partial progress could be simply saved as trees with root the matched hypothesis returned by the index.
+However, we decided to move towards an index that looks at all the hypotheses of the rule.
+The idea is that we can better track and save information about which hypotheses will potentially complete which rules.
+This makes it particularly easy to maintain partial matches which, as we will see, are classified in terms of the instantiation of their set of shared variables.
+Another advantage is that we only need to look at each of the context's hypotheses once.
+This makes the procedure incremental, which is part of the stateful philosophy.
+
+In other words, the indexing is now a discrimination tree that maps types $T$ to sets of pairs $(r,i)$ where $r : (x_1 : T_1) \dots (x_n : T_n) \to \Psi$ is a rule, $i$ is a slot of $r$ and $T$ is likely unifies with $T_i$.
 
 \subsection{Match Redundancy}
 
@@ -971,6 +986,7 @@ Examples include the DPLL algorithm with its unit resolution rule (TODO ref) or 
 Focusing (TODO ref) provides a proof-theoretic view on the interplay of forward and backward reasoning.
 
 \jcom{auto2}
+\jcom{Mention ACL2 forward rule triggers}
 
 \section{Conclusion}
 
@@ -1111,4 +1127,3 @@ TODO
 %                             \end{axis}
 %                             \end{tikzpicture}
 %                         \end{figure}
-    
