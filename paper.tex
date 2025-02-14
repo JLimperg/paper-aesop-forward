@@ -920,34 +920,24 @@ The work the stateful algorithm has to do is thus close to constant in this scen
 
 \paragraph{ACL2.}
 Among white-box proof automation tactics, only ACL2's \enquote{waterfall} (TODO ref) has special support for forward reasoning.
-(Some such tactics, e.g.\ Coq's \texttt{auto}, can execute arbitrary tactics including forward rules, but make no special provisions for them.)
-Like Aesop, ACL2 works on goals and saturates the local context of each goal, using user-provided forward rules, before using backward reasoning proof methods.
+(Some such tactics, e.g.\ Coq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.)
 It uses essentially Aesop's naive algorithm, i.e.\ the local context of each goal is saturated independently without reusing partial results from other goals.
+ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be selected based on the presence of a particular term anywhere in the goal, rather than based on particular hypotheses.
+Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
 
 \paragraph{SATCHMO.}
 The Prolog-based first-order theorem prover SATCHMO (TODO ref) and its many descendants (TODO refs) uses a tableau calculus (TODO ref) that can be viewed as combined forward and backward reasoning.
-Given a set of implications $A₁ ∧ \dots ∧ Aₙ → B₁ ∨ \dots ∨ Bₘ$ (with special cases $⊤ → B₁ ∨ \dots ∨ Bₘ$ and $A₁ ∧ \dots ∧ Aₙ → ⊥$), SATCHMO attempts to create a model that satisfies all implications.
-To that end, it matches the premises $A₁, \dots, Aₙ$ of each rule against known facts from Prolog's database, which is initially empty.
-If this is successful, SATCHMO first adds $B₁$ to the Prolog database and continues its search; if the continuation fails (i.e., if $⊥$ is derived), SATCHMO backtracks and tries $B₂$, etc.
-
-This search procedure can be viewed as a special case of our technique: the implications are used as forward rules and a single backward rule splits any goal with target $B₁ ∨ \dots ∨ Bₘ$ into $m$ goals with targets $B₁, \dots, Bₘ$.
-Compared to a Prolog-based implementation, our technique has the advantage that at each branching point we remember the partial matches induced by the currently known facts for each implication, rather than matching the implication against the database multiple times (subject to one of Prolog's various indexing schemes).
-Whether this gain outweighs the cost of storing and maintaining the partial match data structures likely depends on the given implications.
-Another advantage is that our technique is agnostic to the search strategy, whereas SATCHMO's Prolog implementation is based on backtracking and hence must use depth-first search.
+Given a set of implications $A₁ ∧ \dots ∧ Aₙ → B₁ ∨ \dots ∨ Bₘ$, SATCHMO attempts to create a model that satisfies all implications.
+Its search procedure is a special case of our technique: the implications are used as forward rules and a single backward rule splits any goal with target $B₁ ∨ \dots ∨ Bₘ$ into goals with targets $B₁, \dots, Bₘ$.
+This is a simpler setting than ours since the backward rule does not change the facts available to the forward rules.
+Still, our technique has the advantage that at each branching point we remember the partial matches induced by the currently known facts for each implication, rather than matching the implication against the database multiple times.
 
 \paragraph{Knowledge-based reasoning systems.}
 Combined forward and backward reasoning is also supported by some knowledge-based reasoning systems, e.g.\ Algernon (TODO ref) and EYE (TODO ref).
-However, to our knowledge none of these systems have backwards rules that can change the facts available to forward rules.
-Hence backward and forward reasoning do not interact and there is no need for our technique.
+To our knowledge, none of these systems have backwards rules that can change the facts available to forward rules.
 Nevertheless, our proposal bears some resemblance to the RETE algorithm (TODO ref) for forward reasoning in large knowledge bases.
 
-\paragraph{Other related work.}
-More distantly related are various calculi that combine backward reasoning with some form of incremental forward reasoning or simplification.
-Examples include the DPLL algorithm with its unit resolution rule (TODO ref) or incremental theory reasoners in SMT (TODO ref) and tableaux (TODO refs).
-Focusing (TODO ref) provides a proof-theoretic view on the interplay of forward and backward reasoning.
-
-\jcom{auto2}
-\jcom{Mention ACL2 forward rule triggers}
+\jcom{auto2?}
 
 \section{Conclusion}
 
