@@ -208,7 +208,7 @@ The \emph{shared variables of slot $i$}, $\vars(i)$ are those variables that app
 
 If $h : A$ is a hypothesis in the local context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
 Unification induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
-For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{sec:unification}.
+For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{sec:implementation}.
 
 A \textit{match} $M$ for a given rule $r$ is a partial map from slots of $r$ to hypotheses.
 The map must satisfy the following conditions:
@@ -696,9 +696,7 @@ When $h$ is deleted, we can then efficiently determine the relevant rule states 
 Implementing the preceding technique efficiently requires some care, particularly in the context of dependent type theory.
 We briefly discuss the most prominent challenges.
 
-\subsection{Unification}%
-\label{sec:unification}
-
+\paragraph{Unification.}
 In Lean's type theory, types contain programs and unification is expected to respect definitional equality, i.e.\ equality up to evaluation.
 For instance, a theorem with premise $P~2$, where $P$ is some predicate, should apply to a hypothesis of type $P~((\Lam{x}{x})~2)$ since the two types are definitionally equal.
 As a result, unifying premises and hypotheses is arbitrarily expensive in theory and a major cost centre in practice.
@@ -707,55 +705,42 @@ Our technique therefore seeks to minimise the number of unifications performed.
 To limit the expense of unification, we perform unification at \emph{reducible} transparency.
 Lean has multiple transparency levels that determine which constants are unfolded.
 \enquote{Reducible} is the most restrictive of these, so we unfold few (and, in practice, only non-recursive) definitions, which greatly reduces the cost of unification.
-It also limits the power of forward reasoning since
+However, this limits the power of forward reasoning since fewer terms can be unified.
 
 We also need to account for higher-order unification problems: $Q~\mvar{f}$, where $Q$ is a predicate over functions and $\mvar{f}$ is a function variable, should unify with $Q~(\Lam{x}{x})$.
-Since higher-order unification is undecidable and does not admit most general unifiers (TODO ref), we use instead a unification algorithm provided by Lean that is complete for first-order unification problems and heuristically solves some higher-order problems as well.
-This makes our technique incomplete in the sense that some theorem instantiations will be missed, but since the same unification algorithm is used throughout Lean, users are at least well-acquainted with this source of incompleteness.
+Since higher-order unification is undecidable and does not admit most general unifiers (TODO ref), we instead use a unification algorithm provided by Lean that is complete for first-order unification problems and heuristically solves some higher-order problems as well.
+This makes our technique incomplete in the sense that some theorem instantiations will be missed, but since the same unification algorithm is used throughout Lean, users are well acquainted with this form of incompleteness.
 
-\jcom{TODO: mvars in hyps are treated as rigid}
+During unification, we treat metavariables in hypotheses as constants, i.e.\ we never assign them.
+This reflects the expected behaviour of forward rules: given a hypothesis $\mvar{x} < \mvar{y}$, we would not expect a forward rule to commit to the choice $\mvar{x} ≔ 1$ and $\mvar{y} ≔ 0$ just because this allows the rule to derive a contradiction.
 
-\subsection{Data Representation}
-
-Since the maps $μ_{x}$  and $η_{x}$ have the same domain, we may combine them into one map.
-This core data structure is then represented by nested persistent hash maps: a first hash map maps variables to a second hash map, the second hash map maps slots to a third hash map and the third hash map maps instantiations to a set of hypotheses and a set of partial matches.
+\paragraph{Data Representation.}
+Since the hypothesis index $H$ and the variable index $M$ of a rule state have the same domain, we combine them into one map.
+This core data structure is then represented by nested persistent hash maps: a first hash map maps variables to a second hash map; the second hash map maps slots to a third hash map; and the third hash map maps instantiations to sets of hypotheses and sets of partial matches.
 
 When we compare instantiations, the comparison should be up to definitional equality.
 For example, when we try to apply a theorem $\All{x}{P~x → Q~x → R~x}$ where the first slot matches a hypothesis of type $P~a$ and the second slot matches a hypothesis of type $P~((\Lam{x}{x})~a)$, the application should succeed even though the instantiations of $\mvar{x}$ are different.
 We therefore do not store $a$ and $(\Lam{x}{x})~a$ in the variable maps as-is.
 
 Instead, we bring all instantiations into a normal form which we call \emph{reducible proof-irrelevant normal form} (RPINF).
-This is the usual normal form of expressions with respect to Lean's notion of computation, except for two modifications:
-\begin{itemize}
-  \item Only \emph{reducible} defined constants are unfolded, i.e.\ replaced with their definiendum.
-        This reflects our choice to perform unification at reducible transparency.
-  \item Parts of the original expression that are proofs (in the sense that their types are members of the universe $\Prop$ of propositions) are not normalised.
-        This reflects the fact that Lean's type theory definitionally equates any two proofs of the same proposition, so there is no need to check whether they are equal.
-        When computing the RPINF, we also mark all proofs occurring in it with some special \enquote{metadata}.
-\end{itemize}
+This is the usual normal form of expressions with respect to Lean's notion of computation, with two modifications.
+First, only \emph{reducible} defined constants are unfolded, i.e.\ replaced with their definiendum.
+This reflects our choice to perform unification at reducible transparency.
+Second, parts of the original expression that are proofs (in the sense that their types are members of the universe $\Prop$ of propositions) are not normalised.
+This reflects the fact that Lean's type theory definitionally equates any two proofs of the same proposition, so there is no need to check whether they are equal.
+When computing the RPINF, we also mark all proofs occurring in it with some special \enquote{metadata}.
 
-With this setup, two expressions $t$ and $u$ are definitionally equal at reducible transparency if their RPINFs, $t'$ and $u'$, are syntactically equal except for those portions of $t'$ and $u'$ that are proofs, which are always considered equal.
-Since this is an entirely syntactic notion of equality, it can be checked very quickly and we can define an effective hash function that is compatible with it.
+With this setup, two expressions $t$ and $u$ are definitionally equal at reducible transparency if and only if their RPINFs, $t'$ and $u'$, are syntactically equal except for those portions of $t'$ and $u'$ that are proofs, which are always considered equal.
+Since this is an entirely syntactic notion of equality, it can be checked quickly and we can define an effective hash function that is compatible with it.
 This allows us to use a hash map for the instantiations while still comparing them up to definitional equality.
 
 We believe that this scheme is more efficient than alternative schemes relying on repeated unification.
 For example, we could use Lean's implementation of imperfect discrimination trees (TODO ref), which implement a map from expressions to arbitrary data where lookup respects definitional equality.
 However, since these discrimination trees are imperfect, they may return spurious lookup results, so whether a lookup result is valid must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
-We believe that repeatedly performing such unifications would be, on average, more expensive than calculating one RPINF (which can be cached) for each type in a goal.
+We believe that repeatedly performing such unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
-\subsection{Goal Diffs}
-
-\jcom{Remove this whole section as too low-level?}
-In Lean, the type of hypotheses can sometimes change while the hypothesis' identifier remains the same.
-This means that one needs to track the types of the hypotheses as well.
-We call this tracking \textit{goal diffs}, they highlight the differences between old and updated goal states.
-The reference to hypotheses which changing types get deleted from the maps and the slot.
-We then add them again as a new hypothesis.
-
-\subsection{Indexing}
-
+\paragraph{Indexing.}
 \jcom{TODO adjust}
-
 This partial progress could be simply saved as trees with root the matched hypothesis returned by the index.
 However, we decided to move towards an index that looks at all the hypotheses of the rule.
 The idea is that we can better track and save information about which hypotheses will potentially complete which rules.
@@ -763,15 +748,13 @@ This makes it particularly easy to maintain partial matches which, as we will se
 Another advantage is that we only need to look at each of the context's hypotheses once.
 This makes the procedure incremental, which is part of the stateful philosophy.
 
-In other words, the indexing is now a discrimination tree that maps types $T$ to sets of pairs $(r,i)$ where $r : (x_1 : T_1) \dots (x_n : T_n) \to \Psi$ is a rule, $i$ is a slot of $r$ and $T$ is likely unifies with $T_i$.
+In other words, the indexing is now a discrimination tree that maps types $T$ to sets of pairs $(r,i)$ where $r : (x_1 : T_1) \dots (x_n : T_n) \to \Psi$ is a rule, $i$ is a slot of $r$ and $T$ likely unifies with $T_i$.
 
-\subsection{Match Redundancy}
+\paragraph{Match Redundancy.}
+TODO
 
-\subsection{Hypothesis Redundancy}
-
+\paragraph{Hypothesis Redundancy.}
 \jcom{Mention here that we also use this for the naive algorithm.}
-
-\subsection{Precompilation}
 
 \section{Evaluation}%
 \label{sec:evaluation}
