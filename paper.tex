@@ -663,7 +663,7 @@ We therefore do not store $a$ and $(\Lam{x}{x})~a$ in the variable maps as-is.
 
 Instead, we bring all instantiations into a normal form which we call \emph{reducible proof-irrelevant normal form} (RPINF).
 This is the usual normal form of expressions with respect to Lean's notion of computation, with two modifications.
-First, only \emph{reducible} defined constants are unfolded, i.e.\ replaced with their definiendum.
+First, only \emph{reducible} defined constants are unfolded.
 This reflects our choice to perform unification at reducible transparency.
 Second, parts of the original expression that are proofs (in the sense that their types are members of the universe $\Prop$ of propositions) are not normalised.
 This reflects the fact that Lean's type theory definitionally equates any two proofs of the same proposition, so there is no need to check whether they are equal.
@@ -945,7 +945,6 @@ We have presented a technique that integrates forward reasoning into a tree-base
 We avoid redundant reasoning steps by caching partial forward rule applications in a data structure, the \emph{forward match state}, that enables efficient updates.
 The technique is independent of the search strategy and logic used.
 Our evaluation shows a substantial speedup on some synthetic benchmarks, relative to Aesop's previous implementation.
-
 \end{document}
 
 
