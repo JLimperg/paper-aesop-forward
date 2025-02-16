@@ -145,7 +145,7 @@
 \section{Introduction}
 
 In many proof assistants, simple automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, PVS's (TODO ref) grind, Lean's (TODO ref) Aesop (TODO ref), etc.
-These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{local context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
+These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
 Faced with an initial goal, the tactics try various user-specified \emph{rules}, which correspond to admissible inferences in the prover's logic.
 A successful rule reduces the current goal to zero or more subgoals, which are solved recursively until either a full proof is found or no rule applies to any open goal or the search times out.
 
@@ -160,20 +160,20 @@ For example, the Aeneas project (TODO ref) uses Aesop's forward rules \jcom{(ens
 
 However, Aesop's (and ACL2's) support for forward rules was, until recently, quite basic.
 In particular, each forward rule was tried on each goal separately (subject to pre-filtering by a discrimination tree (TODO ref) index).
-This is wasteful since in practice, many rules produce subgoals with a similar---or even the same---local context as the initial goal.
+This is wasteful since in practice, many rules produce subgoals with a similar---or even the same---context as the initial goal.
 For example, the ∧-introduction rule affects only the goal's target, not its context.
 Still, all forward rules applied to the initial $Γ ⊢ A ∧ B$ would be tried again on the subgoals $Γ ⊢ A$ and $Γ ⊢ B$, with predictably little effect.
 
 In this paper, we present an alternative way to apply forward rules that addresses this issue.
 The central idea is to remember, for each goal $Γ ⊢ A$, which forward rules can be partially applied to which sets of hypotheses.
-When a non-forward rule then generates subgoals $Δ₁ ⊢ A₁$, \dots, $Δₙ ⊢ Aₙ$, the new local contexts $Δᵢ$ are likely similar to $Γ$.
+When a non-forward rule then generates subgoals $Δ₁ ⊢ A₁$, \dots, $Δₙ ⊢ Aₙ$, the new contexts $Δᵢ$ are likely similar to $Γ$.
 Hence it is generally cheaper (and often much cheaper) to start with the partial matches for $Γ$ and update them for each of the $Δᵢ$.
 The update first deletes partial matches that include hypotheses no longer present in $Δᵢ$.
 Afterwards it adds new partial matches for the hypotheses that are new in $Δᵢ$, extending the existing partial matches for a rule if the new hypothesis is compatible with them.
 Whenever this process produces a full match---i.e., all premises of a forward rule are satisfied by a set of hypothesis in $Δᵢ$---the rule is applied and adds a corresponding new hypothesis to $Δᵢ$.
 Our main contribution is a data structure, the \emph{partial match state}, that organises the partial matches in such a way that the update can be done efficiently.
 
-In addition to supporting such \emph{incremental} forward reasoning, the partial match state satisfies two other desiderata:
+In addition to this \emph{incrementality}, the partial match state satisfies two other desiderata:
 \begin{itemize}
   \item It is \emph{persistent}, i.e.\ partial match states for parent and child goals share much of their structure.
         This is desirable since Aesop supports search strategies other than depth-first search and must therefore keep all goals encountered during the search, along with their partial match states, in memory.
@@ -182,8 +182,8 @@ In addition to supporting such \emph{incremental} forward reasoning, the partial
         We therefore want to avoid redundant unifications.
 \end{itemize}
 
-Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation in some (though not all) cases.
-The implementation, the benchmarks we used and the full evaluation data are available in a supplement to this paper (TODO ref).
+Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation on some (though not all) synthetic benchmarks.
+The implementation, benchmarks and evaluation data are available in a supplement to this paper (TODO ref).
 Mainline Aesop already uses the new implementation by default (TODO true?).
 
 \section{Preliminaries}
@@ -206,7 +206,7 @@ This is the premise's \emph{slot}, which we often identify with the premise itse
 For now, we assume that the input premises are numbered consecutively, so in the above example slot 1 has type $x < y$ and slot 2 has type $y < z$.
 The \emph{shared variables of slot $i$}, $\vars(i)$ are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
 
-If $h : A$ is a hypothesis in the local context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
+If $h : A$ is a hypothesis in the context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
 Unification induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
 For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{sec:implementation}.
 
@@ -921,7 +921,7 @@ The work the stateful algorithm has to do is thus close to constant in this scen
 \paragraph{ACL2.}
 Among white-box proof automation tactics, only ACL2's \enquote{waterfall} (TODO ref) has special support for forward reasoning.
 (Some such tactics, e.g.\ Coq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.)
-It uses essentially Aesop's naive algorithm, i.e.\ the local context of each goal is saturated independently without reusing partial results from other goals.
+It uses essentially Aesop's naive algorithm, i.e.\ the context of each goal is saturated independently without reusing partial results from other goals.
 ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be selected based on the presence of a particular term anywhere in the goal, rather than based on particular hypotheses.
 Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
 
