@@ -240,28 +240,18 @@ The term orders used in various saturation calculi serve a similar function.
 \section{Naive Forward Reasoning}
 
 Prior to this work, Aesop used what we call naive forward reasoning (TODO ref).
-This approach treats a forward rule essentially like any other Aesop rule.
-Hence, given a goal $h₁ : T₁,\, \dots, hₙ : Tₙ ⊢ U$, we first query an index to determine which rules might apply to the goal.
-For forward rules, this index stores the type of the last premise (since later premises tend to be more specific).
-The index is queried for each $Tᵢ$, yielding a set of rules that have a premise which likely unifies with at least one hypothesis.
-Of these rules and any non-forward rules selected in a similar way, we select the highest-priority one.
+This approach treats forward rules essentially like any other Aesop rule.
+When Aesop selects a forward rule $r : \All{(x₁ : A₁) \dots (xₘ : Aₘ)}{B}$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we first unify the last premise $Aₘ$ with each hypothesis $h : C$ such that $C$ and $Aₘ$ likely unify (as determined by a discrimination tree (TODO ref) index).
+If successful, this results in a substitution $σ₁$ containing $xₘ$ and any variables occurring in $Aₘ$.
+We then unify $A_{m-1}[σ₁]$ with the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{m-2}[σ₂]$, etc., until we obtain a complete match for $r$ (skipping premises $A_{m-i}$ if they are already determined by $σᵢ$).
+If a premise $A_{m-i}[σᵢ]$ does not unify with any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
+These may lead to a different substitution $τ$ and therefore to matching hypotheses for $A_{i}[τ]$.
+If this process yields at least one full application $r~a₁ \dots aₘ$, we can add a new hypothesis of type $T = B[x₁ ↦ a₁, \dots, xₘ ↦ aₘ]$, meaning we generate the subgoal $Γ, h : T$ (unless $Γ$ already contains a hypothesis of type $T$).
 
-If the selected rule is a forward rule $r : \All{(x₁ : A₁) \dots (xₘ : Aₘ)}{B}$, we first unify $Aₘ$ with one of the candidate hypotheses determined by the index.
-If successful, this results in a substitution $σ$ whose domain contains $xₘ$ and any variables occurring in $Aₘ$.
-We then proceed to unify $A_{m-1}[σ]$ with the type of each hypothesis in the context, etc., until we have found a complete match for $r$ (skipping premises already determined by $σ$).
-If a premise type $A_{i}[σ]$ does not unify with any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
-This may lead to a different substitution $τ$ and therefore to matching hypotheses for $A_{i}[τ]$.
-
-If this process yields one or more full applications $r~a₁ \dots aₘ$, we add $B[x₁ ↦ a₁, \dots, xₘ ↦ aₘ]$ as a new hypothesis unless a hypothesis of this type is already present in the context.
-
-\jcom{Add example?}
-
-This approach is efficient when the last premise of a rule is not present in the context since the rule is then never run.
-If the last premise is present, however, we perform a large number of unifications between premises and hypotheses.
-Furthermore, these unifications are repeated when we proceed to another goal with a similar context.
-In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited since the naive algorithm is stateless.
-
-\jcom{Mention fast subsumption paper?}
+This approach is efficient when the last premise of a rule is not present in the context since the rule is then excluded by indexing and never run.
+If the last premise is present, however, we perform a large number of unifications between premises and hypotheses (though some of these could perhaps be avoided heuristically (TODO ref fast subsumption)).
+Furthermore, the whole process is repeated when we proceed to another goal with a similar context.
+In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited by the naive algorithm.
 
 \section{Incremental Forward Reasoning}%
 \label{sec:incremental}
