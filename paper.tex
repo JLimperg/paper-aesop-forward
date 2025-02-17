@@ -258,7 +258,7 @@ In particular, the contexts of subgoals produced by whatever rule is eventually 
 
 With the weaknesses of the naive approach in mind, we introduce an incremental, stateful solution to the problem of finding complete matches.
 The main idea is to store, for each goal $Γ ⊢ A$, the partial matches implied by the hypotheses in $Γ$, and to reuse these partial matches for subgoals $Δ ⊢ B$.
-This rests on the assumption that $Δ$ is likely similar to $Γ$ in practice, and that it is therefore cheaper to update the partial matches for $Γ$ to obtain those of $Δ$ than to compute those of $Δ$ from scratch.
+This rests on the assumption that $Δ$ is likely similar to $Γ$ in practice, and that it is therefore cheaper to update the partial matches for $Γ$ than to compute those of $Δ$ from scratch.
 Our main contribution is a data structure, the \emph{partial match state}, that allows us to perform these updates efficiently.
 
 \paragraph{Partial Match State.}
