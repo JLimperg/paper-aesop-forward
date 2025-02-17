@@ -156,11 +156,12 @@ A successful rule reduces the current goal to zero or more subgoals, which are s
 Typical rules would be the $∧$-introduction lemma $A → B → A ∧ B$, which, when applied backwards, reduces a goal $Γ ⊢ A ∧ B$ to subgoals $Γ ⊢ A$ and $Γ ⊢ B$; or left $∨$-introduction, which reduces $Γ ⊢ A ∨ B$ to $Γ ⊢ A$.
 Such \emph{backward rules} are the most common rule type, but most search tactics allow users to use any tactic as a rule.
 These rule tactics can output arbitrary subgoals, subject only to the condition that proofs of the returned subgoals can be assembled into a proof of the goal on which the rule was run.
+\jcom{The framing here is wrong: we want to talk about non-forward rules that mess with the context, e.g. case splitting.}
 
 ACL2, PVS and Aesop provide special support for \emph{forward rules}.
 Given, for example, the transitivity lemma $\All{x~y~z}{x < y → y < z → x < z}$, a forward rule run on the goal $h₁ : a < b,\, h₂ : b < c ⊢ A$ produces the single subgoal $h₁ : a < b,\, h₂ : b < c,\, h₃ : a < c ⊢ A$.
 Hence forward rules can be used to establish additional facts that may be relevant for other rules.
-For example, the Aeneas project (TODO ref) uses Aesop's forward rules \jcom{(ensure that this is accurate)} in its proof automation to establish facts that are later used by an arithmetic decision procedure.
+For example, the Aeneas project (TODO ref) uses Aesop's forward rules \jcom{ensure that this is accurate} in its proof automation to establish facts that are later used by an arithmetic decision procedure.
 
 However, Aesop's support for forward rules was, until recently, quite basic.
 In particular, each forward rule was tried on each goal separately (subject to pre-filtering by a discrimination tree (TODO ref) index).
