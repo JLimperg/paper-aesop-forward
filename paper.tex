@@ -998,17 +998,15 @@ ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be
 Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
 Some other white-box tactics, e.g.\ Rocq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.
 
-\paragraph{SATCHMO.}
-The Prolog-based first-order theorem prover SATCHMO (TODO ref) and its many descendants (TODO refs) use a tableau calculus (TODO ref) that can be viewed as combined forward and backward reasoning.
-Given a set of implications $A₁ ∧ \dots ∧ Aₙ → B₁ ∨ \dots ∨ Bₘ$, SATCHMO attempts to create a model that satisfies all implications.
-Its search procedure is a special case of our technique: the implications are used as forward rules and a single backward rule splits any goal with target $B₁ ∨ \dots ∨ Bₘ$ into goals with targets $B₁, \dots, Bₘ$.
-This is a simpler setting than ours since the backward rule does not change the facts available to the forward rules.
-Still, our technique has the advantage that at each branching point we remember the partial matches induced by the currently known facts for each implication, rather than matching the implication against the database multiple times.
+\paragraph{Mixed-Mode Reasoning.}
+Some knowledge-based reasoning systems, e.g.\ Algernon (TODO ref) and EYE (TODO ref), support combined forward and backward (\enquote*{mixed-mode}) reasoning.
+However, to our knowledge, rules in these systems cannot change the assumptions available to forward rules, so they do not require incrementality.
+Nevertheless, our technique bears some resemblance to the RETE algorithm (TODO ref) for forward reasoning in large knowledge bases.
 
-\paragraph{Knowledge-based reasoning systems.}
-Combined forward and backward reasoning is also supported by some knowledge-based reasoning systems, e.g.\ Algernon (TODO ref) and EYE (TODO ref).
-To our knowledge, none of these systems have backwards rules that can change the facts available to forward rules.
-Nevertheless, our proposal bears some resemblance to the RETE algorithm (TODO ref) for forward reasoning in large knowledge bases.
+The Prolog-based first-order theorem prover SATCHMO (TODO ref) and its many descendants also use mixed-mode reasoning.
+SATCHMO's search procedure can be viewed as a special case of our technique: a given set of implications are used as forward rules and a single case-splitting rule splits any goal with hypothesis $h : B₁ ∨ \dots ∨ Bₘ$ into $m$ goals with hypotheses $h₁ : B₁, \dots, hₘ : Bₘ$.
+A SATCHMO-style prover may benefit from our incremental approach if the set of implications is large, though in a setting where unification is cheap it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the partial match state.
+SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, which provides a form of incrementality.
 
 \jcom{auto2?}
 
