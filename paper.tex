@@ -310,15 +310,16 @@ Note that hypotheses matching slot $1$ are not stored since they can never exten
 
 Similarly, the \emph{match index} $M$ maps each triple $(x, i, t)$ to the set of partial matches $m$ (that can be derived from the hypotheses added to the rule state) such that $i = \lvl(m) $, $x ∈ \vars(i + 1)$ and $\sub(m)(x) = t$.
 Matches for the maximal slot are not stored because, being complete, they never need to be extended.
+We write $M_{x}(i, t)$ instead of $M(x, i, t)$ and $H_{x}(i, t)$ instead of $H(x, i, t)$.
 
 Given a hypothesis $h : T$ that matches slot $i > 1$ with substitution $σ = \sub_{i}(h)$, the partial matches that can be extended by $h$ are those in slot $i - 1$ whose substitutions are compatible with $σ$ on the variables $\vars(i)$ (i.e., the variables shared between $i$ and any earlier slot).
 Assuming for the moment that $\vars(i)$ is nonempty for all slots $i > 1$, these matches are
 \[
-  \bigcap_{x \in \vars(i)} M(x, i-1, σ(x))
+  \bigcap_{x \in \vars(i)} M_{x}(i-1, σ(x))
 \]
 Similarly, given a partial match $m$ at level $i$ with substitution $σ = \sub(m)$, the hypotheses that could extend $m$ are
 \[
-  \bigcap_{x \in \vars(i+1)} H(x, i+1, σ(x))
+  \bigcap_{x \in \vars(i+1)} H_{x}(i+1, σ(x))
 \]
 The number of shared variables tends to be small in practice, so these intersections can be computed efficiently.
 
@@ -338,9 +339,9 @@ The procedures maintain the invariants of the variable indices while reporting a
       $\mathrm{addMatch}(\{1 ↦ h\})$
     }{
       \For{$x$ \KwIn $\vars(i)$}{
-        Insert $h$ into the set $H(x, i, σ(h))$
+        Insert $h$ into the set $H_{x}(i, σ(h))$
       }
-      \KwLet $\mathit{ms} ≔ \bigcap_{x \in \vars(i)} M(x, i-1, σ(x))$ \\
+      \KwLet $\mathit{ms} ≔ \bigcap_{x \in \vars(i)} M_{x}(i-1, σ(x))$ \\
       $\mathit{completeMs} \gets ∅$ \\
       \For{$m$ \KwIn $\mathit{ms}$}{
         $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ∪ \{i ↦ h\})$
@@ -371,9 +372,9 @@ While adding matches, we may discover new complete matches, which are collected 
       \Return{$\{m\}$}
     }{
       \For{$x$ \KwIn $\vars(i + 1)$}{
-        Insert $m$ into the set $M(x, i, σ(x))$
+        Insert $m$ into the set $M_{x}(i, σ(x))$
       }
-      \KwLet $\mathit{hs} ≔ \bigcap_{x \in \vars(i + 1)} H(x, i + 1, σ(x))$ \\
+      \KwLet $\mathit{hs} ≔ \bigcap_{x \in \vars(i + 1)} H_{x}(i + 1, σ(x))$ \\
       $\mathit{completeMs} \gets ∅$ \\
       \For{$h$ \KwIn $\mathit{hs}$}{
         $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ∪ \{i + 1 ↦ h\})$
@@ -397,10 +398,10 @@ We have so far assumed that for each slot $i > 1$, the set of shared variables $
 This assumption is violated for rules such as $\All{x~y}{P~x → Q~y → R~x~y}$: slot 2 ($Q~y$) shares no variables with slot 1 ($P~x$).
 As a result, our above algorithms fail.
 Suppose we are adding the hypothesis $h₂ : Q~b$, having already added the hypothesis $h₁ : P~a$ and hence the partial match $\{1 ↦ h₁\}$.
-The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M(x, i-1, σ(x)) = ∅$, but in fact the match $\{1 ↦ h₁\}$ can be extended with $h₂$.
+The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M_{x}(i-1, σ(x)) = ∅$, but the match $\{1 ↦ h₁\}$ can be extended with $h₂$.
 In fact, any match at level 1 can be extended with any hypothesis matching slot 2 since the two slots are independent.
 
-To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, using a construction from (TODO ref).
+To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, using a construction from (TODO ref Aesop Sec. 4.2).
 These subsets, called \emph{variable clusters}, share no variables with each other, so each can be treated as a separate rule with its own rule state.
 Finding a complete match for a rule amounts to finding one complete match for each of its clusters.
 The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
@@ -418,17 +419,16 @@ The rule has two slots of types $x ≤ y$ and $y ≤ z$ which share the variable
 
 The hypothesis $h₁ : 301 ≤ 302$ unifies with both slots, so we run Algorithm~\ref{alg:addhyp} twice.
 For slot 1, unification yields the substitution $\{x ↦ 301, y ↦ 302\}$.
-Since this is the first slot, we start a new partial match $\{1 ↦ h₁\}$, which Algorithm~\ref{alg:addmatch} inserts into the set $M(y, 1, 302)$.
+Since this is the first slot, we start a new partial match $\{1 ↦ h₁\}$, which Algorithm~\ref{alg:addmatch} inserts into the set $M_{y}(1, 302)$.
 This match cannot be extended since the hypothesis index $H$ does not contain a hypothesis for slot 2.
 
-For slot 2, unification yields the substitution $σ ≔ \{y ↦ 301, z ↦ 302\}$, so we insert $h₁$ into $H(2, y, 301)$.
+For slot 2, unification yields the substitution $σ ≔ \{y ↦ 301, z ↦ 302\}$, so we insert $h₁$ into $H_{y}(2, 301)$.
 No matches at level 1 can be extended by $h₁$ since
 \[
-  \bigcap_{x \in \vars(2)} M(x, 1, σ(x)) = M(y, 1, 301) = \emptyset
+  \bigcap_{x \in \vars(2)} M_{x}(1, σ(x)) = M_{y}(1, 301) = \emptyset
 \]
 At this point, $H$ and $M$ are in the following state.
 For brevity, we write matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ as $[h₁, \dots, hₙ]$.
-We also write $H_{y}$ instead of $H(y, \text{--}, \text{--})$, and similar for $M$.
 \begin{center}
 \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
   \node[xshift = 0] {$H_{y}$}
@@ -452,11 +452,11 @@ We also write $H_{y}$ instead of $H(y, \text{--}, \text{--})$, and similar for $
 \end{center}
 
 Now we add $h₂ : 300 ≤ 301$, which again unifies with both slots.
-For slot 1, $\sub₁(h₂)(y) = 301$, so we add the match $\{1 ↦ h₂\}$ to $M(y, 1, 301)$.
-We then check for hypotheses in slot 2 that also instantiate $y$ with $301$, and indeed we find $M(2, y, 301) = \{h₁\}$.
+For slot 1, $\sub₁(h₂)(y) = 301$, so we add the match $\{1 ↦ h₂\}$ to $M_{y}(1, 301)$.
+We then check for hypotheses in slot 2 that also instantiate $y$ with $301$, and indeed we find $M_{y}(2, 301) = \{h₁\}$.
 Hence we return the complete match $\{1 ↦ h₂, 2 ↦ h₁\}$, which induces a new hypothesis $h₃ : 300 ≤ 302$ to be added later.
 
-For slot 2, we add $h₂$ to $H(y, 2, 300)$.
+For slot 2, we add $h₂$ to $H_{y}(2, 300)$.
 There are no compatible matches at level 1, so we are done with $h₂$, yielding the following final rule state.
 \begin{center}
     \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
@@ -584,7 +584,7 @@ To find hypotheses compatible with $m$, we consider the set of variables $\vars(
 These are the variables shared between slot $\lvl(m) + 1 = 2$ and all previous slots, i.e.\ $x$ and $y$.
 Hence the compatible hypotheses are
 \[
-  \bigcap_{x \in \vars(\lvl(m) + 1)} H(x, i + 1, \sub(m)(x)) = H(x, 2, a) \cap H(y, 2, b) = \emptyset
+  \bigcap_{x \in \vars(\lvl(m) + 1)} H_{x}(i + 1, \sub(m)(x)) = H_{x}(2, a) \cap H_{y}(2, b) = \emptyset
 \]
 This means the match cannot currently be extended.
 We now turn to the remaining hypothesis $h_3 : B~a~b$, adding it first to $H$:
@@ -621,7 +621,7 @@ We now turn to the remaining hypothesis $h_3 : B~a~b$, adding it first to $H$:
 \end{center}
 Since $h₃$ matches slot $i = 2$, the matches that can be extended by $h₃$ are
 \[
-  \bigcap_{x \in \vars(i)} M(x, i - 1, \sub_{i}(x)) = M(x, 1, a) \cap M(y, 1, b) = \{[h₂]\}
+  \bigcap_{x \in \vars(i)} M_{x}(i - 1, \sub_{i}(x)) = M_{x}(1, a) \cap M_{y}(1, b) = \{[h₂]\}
 \]
 We have found the complete match $[h₂, h₃]$ and can add a new hypothesis of type $C~a~b$.
 
@@ -699,8 +699,8 @@ We modified the naive forward reasoning implementation to use the same mechanism
 \label{sec:evaluation}
 
 There are unfortunately no standard benchmarks for Aesop-like tactics, and since Aesop is not expected to solve most goals without an extensive, manually curated set of rules, benchmarks for push-button theorem provers such as TPTP (TODO ref) are not very meaningful.
-At the same time, forward rules are currently little used by Aesop's main client, the Mathlib mathematics library (TODO ref).
-We therefore evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that showcase the performance characteristics of incremental forward reasoning.
+Additionally, forward rules are currently little used by Aesop's main client, the Mathlib mathematics library (TODO ref).
+We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that showcase the performance characteristics of incremental forward reasoning.
 
 For each benchmark, we set up certain forward rules and a goal with certain hypotheses.
 We then run the \texttt{saturate} tactic, which uses either naive or incremental forward reasoning to exhaustively apply the forward rules.
