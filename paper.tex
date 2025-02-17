@@ -3,7 +3,7 @@
 % TODO: standardise indices vs indexes
 % TODO: standardise dots after equations
 % TODO: rename variable maps to variable indices everywhere
-% TODO: standardise Rocq vs Coq
+% TODO: Title Case for paragraphs
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -148,7 +148,7 @@
 
 \section{Introduction}
 
-In many proof assistants, simple automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, PVS's (TODO ref) grind, Lean's (TODO ref) Aesop (TODO ref), etc.
+In many proof assistants, simple \enquote*{white-box} automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, Lean's (TODO ref) Aesop (TODO ref), etc.
 These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
 Faced with an initial goal, the tactics try various user-specified \emph{rules}, which correspond to admissible inferences in the prover's logic.
 A successful rule reduces the current goal to zero or more subgoals, which are solved recursively until either a full proof is found or no rule applies to any open goal or the search times out.
@@ -991,12 +991,12 @@ The work the stateful algorithm has to do is thus close to constant in this scen
 
 \section{Related Work}
 
-\paragraph{ACL2.}
-Among white-box proof automation tactics, only ACL2's \enquote{waterfall} (TODO ref) has special support for forward reasoning.
-(Some such tactics, e.g.\ Coq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.)
-It uses essentially Aesop's naive algorithm, i.e.\ the context of each goal is saturated independently without reusing partial results from other goals.
+\paragraph{ACL2 and PVS.}
+Among white-box proof automation tactics, to our knowledge only ACL2's \enquote{waterfall} (TODO ref) and PVS's various proof search strategies (TODO ref) have special support for forward reasoning.
+Both use essentially Aesop's naive algorithm, i.e.\ the context of each goal is saturated independently without reusing partial results from other goals.
 ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be selected based on the presence of a particular term anywhere in the goal, rather than based on particular hypotheses.
 Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
+Some other white-box tactics, e.g.\ Rocq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.
 
 \paragraph{SATCHMO.}
 The Prolog-based first-order theorem prover SATCHMO (TODO ref) and its many descendants (TODO refs) use a tableau calculus (TODO ref) that can be viewed as combined forward and backward reasoning.
@@ -1018,4 +1018,5 @@ We have presented a technique that integrates forward reasoning into a tree-base
 We avoid redundant reasoning steps by caching partial forward rule applications in a data structure, the \emph{forward match state}, that enables efficient updates.
 The technique is independent of the search strategy and logic used.
 Our evaluation shows a substantial speedup on some synthetic benchmarks, relative to Aesop's previous implementation.
+
 \end{document}
