@@ -215,30 +215,31 @@ If $h : A$ is a hypothesis in the context of a goal and $A$ unifies with the typ
 Unification induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
 For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{sec:implementation}.
 
-A \textit{match} $M$ for a given rule $r$ is a partial map from slots of $r$ to hypotheses.
-The map must satisfy the following conditions:
+A \textit{match} $m$ for a give rule $r$ with $n$ slots is a list containing at least one and at most $n$ hypotheses.
+We interpret $m$ as a partial map from slots of $r$ to hypotheses, so $\dom(m) = \{i \mid 1 ≤ i ≤ |m| \}$ and for each slot $i ∈ \dom(m)$, $m(i)$ is the hypothesis assigned to $i$.
+Each match $m$ must satisfy the following requirements:
 \begin{enumerate}
-  \item\label{cond:match:matches} For each slot $i ∈ \dom(M)$, the hypothesis $M(i)$ matches $i$.
-  \item\label{cond:match:compat} For all slots $i,j ∈ \dom(M)$, the substitutions $\sub_{i}(M(i))$ and $\sub_{j}(M(j))$ are \emph{compatible}.
-        This means that for each variable $x ∈ \dom(\sub_{i}(M(i))) ∩ \dom(\sub_{j}(M(j)))$ we have $\sub_{i}(M(i))(x) = \sub_{j}(M(j))(x)$, i.e.\ the substitutions agree on all common variables.
-  \item\label{cond:match:closed} $M$ is \emph{downward-closed}: if $i ∈ \dom(M)$, then for any slot $j < i$ of $r$ we also have $j ∈ \dom(M)$.
+  \item\label{cond:match:matches} For each slot $i ∈ \dom(m)$, the hypothesis $m(i)$ matches $i$.
+  \item\label{cond:match:compat} For all slots $i,j ∈ \dom(m)$, the substitutions $\sub_{i}(m(i))$ and $\sub_{j}(m(j))$ are \emph{compatible}.
+        This means that the substitutions agree on all common variables, i.e.\ for each variable $x ∈ \dom(\sub_{i}(m(i))) ∩ \dom(\sub_{j}(m(j)))$ we have $\sub_{i}(m(i))(x) = \sub_{j}(m(j))(x)$.
 \end{enumerate}
-The \emph{substitution of a match $M$}, $\sub(M)$, is the union of the substitutions induced by the hypotheses in $M$, i.e. $\sub(M) ≔ ⋃_{i ∈ \dom(M)}\sub_{i}(M(i))$.
+The \emph{substitution of a match $m$}, $\sub(m)$, is the union of the substitutions induced by the hypotheses in $m$, i.e. $\sub(m) ≔ ⋃_{i ∈ \dom(m)}\sub_{i}(m(i))$.
 This is well-defined by requirement~\ref{cond:match:compat}.
-The \textit{level of a match $M$}, $\lvl(M)$, is the maximal $i$ such that $i ∈ \dom(M)$.
+The \textit{level of a match $m$}, $\lvl(m)$, is the length of $m$.
 A match for rule $r$ is \textit{complete} if $i ∈ \dom(M)$ for every slot $i$ of $r$, and \emph{partial} otherwise.
 
-A partial match $M$ for rule $r$ corresponds to a partial application of the rule to the terms given in $\sub(M)$.
+A partial match $m$ for rule $r$ corresponds to a partial application of the rule to the terms given in $\sub(M)$.
 The application is type-correct by requirements~\ref{cond:match:matches} and~\ref{cond:match:compat}.
-If $M$ is complete, then $\sub(M)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
+If $m$ is complete, then $\sub(m)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
 
-Requirement~\ref{cond:match:closed} implies that we will be adding hypotheses to matches in the order in which the slots appear.
-Hence for a rule $r : A → B → C → D$, we effectively consider partial applications $r~a$ and $r~a~b$ for some $a : A$ and $b : B$, but not $r~\text{--}~b$.
-This prevents us from constructing $r~a~b$ in two different but ultimately redundant ways.
+Note that matches represent only those partial applications where arguments are added without gaps.
+Hence for a rule $r : A → B → C → D$, the partial applications $r~a$ and $r~a~b$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\text{--}~b$.
+This will prevent us from constructing $r~a~b$ in two different but ultimately redundant ways.
 The term orders used in various saturation calculi serve a similar function.
 
 \section{Naive Forward Reasoning}
 
+\jcom{Formulate this in terms of matches.}
 Prior to this work, Aesop used what we call naive forward reasoning (TODO ref).
 This approach treats forward rules essentially like any other Aesop rule.
 When Aesop selects a forward rule $r : \All{(x₁ : A₁) \dots (xₘ : Aₘ)}{B}$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we first unify the last premise $Aₘ$ with each hypothesis $h : C$ such that $C$ and $Aₘ$ likely unify (as determined by a discrimination tree (TODO ref) index).
@@ -269,9 +270,9 @@ The forward state's interface then consists of two functions
   \addHyp : \States → \Hyps → \States × \powerset(\Rules × \CMatches) \qquad \delHyp : \States → \Hyps → \States
 \end{equation*}
 The $\addHyp$ function adds a hypothesis to the forward state.
-Hence, if $s$ is the forward state corresponding to context $Γ$ and $\addHyp(s, h : T) = (s', M)$, then $s'$ is the forward state corresponding to $Γ,\, h : T$.
+Hence, if $s$ is the forward state corresponding to context $Γ$ and $\addHyp(s, h : T) = (s', C)$, then $s'$ is the forward state corresponding to $Γ,\, h : T$.
 Similarly, if $s$ is the forward state corresponding to $Γ, h : T$, then $\delHyp(s, h : T)$ is the forward state corresponding to $Γ$.
-The second output of $\addHyp$, $M$, is a set of pairs $(r, m)$ where $r$ is a rule and $m$ is a complete match for $r$.
+The second output of $\addHyp$, $C$, is a set of pairs $(r, m)$ where $r$ is a rule and $m$ is a complete match for $r$.
 These are the matches that were completed by adding $h : T$.
 
 When Aesop is run on an initial goal with context $h₁ : T₁, \dots, hₙ : Tₙ$, the forward state for it is built by starting with an empty state and applying $\addHyp$ to each hypothesis $hᵢ$.
@@ -291,16 +292,16 @@ We initially focus on how to add hypotheses, since this question motivates much 
 
 When a hypothesis is added to a rule state, two things can happen.
 First, the hypothesis may allow us to extend partial matches already present in the state.
-For instance, consider the rule $r : \All{x}{P~x → Q~x → R~x → S~x}$ and a rule state containing the partial match $\{1 ↦ h₁\}$, with $1$ referring to the slot of type $P~x$ and $h₁ : P~a$ for some $a$.
-Adding a new hypothesis $h₂ : Q~a$ to this rule state means that we should add to the state the extended match $\{1 ↦ h₁, 2 ↦ h₂\}$.
+For instance, consider the rule $r : \All{x}{P~x → Q~x → R~x → S~x}$ and a rule state containing the partial match $[h₁]$, which assigns some hypothesis $h₁ : P~a$ to the first slot of type $P~x$.
+Adding a new hypothesis $h₂ : Q~a$ to this rule state means that we should add to the state the extended match $[h₁, h₂]$.
 
 Second, adding a match may trigger the insertion of further matches.
 Suppose that before adding $h₁$ and $h₂$, we had already added a hypothesis $h₀ : R~a$ to the rule state.
-Once the partial match $\{1 ↦ h₁, 2 ↦ h₂\}$ arrives, we should recognise that it can be extended with $h₀$ to obtain the (complete) match $\{1 ↦ h₁, 2 ↦ h₂, 3 ↦ h₀\}$.
+Once the partial match $[h₁, h₂]$ arrives, we should recognise that it can be extended with $h₀$ to obtain the (complete) match $[h₁, h₂, h₀]$.
 
 \paragraph{Variable Indices.}
 Extending the matches above was possible only because all hypotheses are compatible on the shared variable $x$, i.e.\ they all instantiate $x$ with the same term $a$.
-In general, to extend a match $M$ with a hypothesis $h : T$ at slot $i$, we need to ensure that the substitution of $M$, $\sub(M)$, is compatible with the substitution of $h$, $\sub_{i}(h)$.
+In general, to extend a match $m$ with a hypothesis $h : T$ at slot $i$, we need to ensure that the substitution of $m$, $\sub(m)$, is compatible with the substitution of $h$, $\sub_{i}(h)$.
 
 The rule state therefore uses two \emph{variable indices} $H$ and $M$ to index hypotheses and matches by their instantiations for shared variables, allowing us to quickly determine compatible pairs of matches and hypotheses.
 We could use a substitution tree (TODO ref, confirm) for this, but our custom data structure is simpler and perhaps more efficient.
@@ -323,7 +324,7 @@ Similarly, given a partial match $m$ at level $i$ with substitution $σ = \sub(m
 \]
 The number of shared variables tends to be small in practice, so these intersections can be computed efficiently.
 
-From these observations we can directly derive two procedures for adding hypotheses and matches  to the rule state.
+From these observations we can directly derive two procedures for adding hypotheses and matches to the rule state.
 The procedures maintain the invariants of the variable indices while reporting any complete matches discovered during this process.
 
 \begin{algorithm}
@@ -336,7 +337,7 @@ The procedures maintain the invariants of the variable indices while reporting a
   \BlankLine
   \Procedure{$\mathrm{addHyp}(h : T)$}{
     \eIf{$i = 1$}{
-      $\mathrm{addMatch}(\{1 ↦ h\})$
+      $\mathrm{addMatch}([h])$
     }{
       \For{$x$ \KwIn $\vars(i)$}{
         Insert $h$ into the set $H_{x}(i, σ(h))$
@@ -344,7 +345,7 @@ The procedures maintain the invariants of the variable indices while reporting a
       \KwLet $\mathit{ms} ≔ \bigcap_{x \in \vars(i)} M_{x}(i-1, σ(x))$ \\
       $\mathit{completeMs} \gets ∅$ \\
       \For{$m$ \KwIn $\mathit{ms}$}{
-        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ∪ \{i ↦ h\})$
+        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ++ [h])$
       }
       \Return{$\mathit{completeMs}$}
     }
@@ -357,7 +358,7 @@ The procedures maintain the invariants of the variable indices while reporting a
 
 The rule state's $\addHyp$ method (Algorithm~\ref{alg:addhyp}) adds a hypothesis $h : T$ matching slot $i$ to the rule state.
 (If a hypothesis matches multiple slots, $\addHyp$ is called multiple times.)
-For $i = 1$, we add the singleton match $\{1 ↦ h\}$ to the rule state.
+For $i = 1$, we add the singleton match $[h]$ to the rule state.
 For $i > 1$, we first insert $h$ into the hypothesis index $H$.
 Then we query the match index $M$ for matches that can be extended by $h$ and add the extended matches to the rule state.
 While adding matches, we may discover new complete matches, which are collected and returned.
@@ -377,7 +378,7 @@ While adding matches, we may discover new complete matches, which are collected 
       \KwLet $\mathit{hs} ≔ \bigcap_{x \in \vars(i + 1)} H_{x}(i + 1, σ(x))$ \\
       $\mathit{completeMs} \gets ∅$ \\
       \For{$h$ \KwIn $\mathit{hs}$}{
-        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ∪ \{i + 1 ↦ h\})$
+        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ++ [h])$
       }
       \Return{$\mathit{completeMs}$}
     }
@@ -397,8 +398,8 @@ Any extended matches thus produced are added to the rule state recursively.
 We have so far assumed that for each slot $i > 1$, the set of shared variables $\vars(i)$ is nonempty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
 This assumption is violated for rules such as $\All{x~y}{P~x → Q~y → R~x~y}$: slot 2 ($Q~y$) shares no variables with slot 1 ($P~x$).
 As a result, our above algorithms fail.
-Suppose we are adding the hypothesis $h₂ : Q~b$, having already added the hypothesis $h₁ : P~a$ and hence the partial match $\{1 ↦ h₁\}$.
-The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M_{x}(i-1, σ(x)) = ∅$, but the match $\{1 ↦ h₁\}$ can be extended with $h₂$.
+Suppose we are adding the hypothesis $h₂ : Q~b$, having already added the hypothesis $h₁ : P~a$ and hence the partial match $[h₁]$.
+The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M_{x}(i-1, σ(x)) = ∅$, but the match $[h₁]$ can be extended with $h₂$.
 In fact, any match at level 1 can be extended with any hypothesis matching slot 2 since the two slots are independent.
 
 To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, using a construction from (TODO ref Aesop Sec. 4.2).
@@ -413,13 +414,13 @@ To facilitate deletion, we cache this information when $h$ is added to the rule 
 When $h$ is deleted, we can then efficiently determine the relevant rule states and delete $h$ from the hypothesis index $H$ at slot $i$ and from the match index $M$ at all slots $j ≥ i$.
 
 \paragraph{Example 1.}
-As a first example, consider a rule state for the transitivity rule $r : \All{x~y~z}{x ≤ y → y ≤ z → x ≤ z}$ to which we add, in order, the hypotheses
+As a first example, consider a rule state for the transitivity rule $r₁ : \All{x~y~z}{x ≤ y → y ≤ z → x ≤ z}$ to which we add, in order, the hypotheses
 $h₁ : 301 ≤ 302$ and $h₂ : 300 ≤ 301$.
 The rule has two slots of types $x ≤ y$ and $y ≤ z$ which share the variable $y$.
 
 The hypothesis $h₁ : 301 ≤ 302$ unifies with both slots, so we run Algorithm~\ref{alg:addhyp} twice.
 For slot 1, unification yields the substitution $\{x ↦ 301, y ↦ 302\}$.
-Since this is the first slot, we start a new partial match $\{1 ↦ h₁\}$, which Algorithm~\ref{alg:addmatch} inserts into the set $M_{y}(1, 302)$.
+Since this is the first slot, we start a new partial match $[h₁]$, which Algorithm~\ref{alg:addmatch} inserts into the set $M_{y}(1, 302)$.
 This match cannot be extended since the hypothesis index $H$ does not contain a hypothesis for slot 2.
 
 For slot 2, unification yields the substitution $σ ≔ \{y ↦ 301, z ↦ 302\}$, so we insert $h₁$ into $H_{y}(2, 301)$.
@@ -428,7 +429,6 @@ No matches at level 1 can be extended by $h₁$ since
   \bigcap_{x \in \vars(2)} M_{x}(1, σ(x)) = M_{y}(1, 301) = \emptyset
 \]
 At this point, $H$ and $M$ are in the following state.
-For brevity, we write matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ as $[h₁, \dots, hₙ]$.
 \begin{center}
 \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
   \node[xshift = 0] {$H_{y}$}
@@ -452,9 +452,9 @@ For brevity, we write matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ as $[h₁, \do
 \end{center}
 
 Now we add $h₂ : 300 ≤ 301$, which again unifies with both slots.
-For slot 1, $\sub₁(h₂)(y) = 301$, so we add the match $\{1 ↦ h₂\}$ to $M_{y}(1, 301)$.
+For slot 1, $\sub₁(h₂)(y) = 301$, so we add the match $[h₂]$ to $M_{y}(1, 301)$.
 We then check for hypotheses in slot 2 that also instantiate $y$ with $301$, and indeed we find $M_{y}(2, 301) = \{h₁\}$.
-Hence we return the complete match $\{1 ↦ h₂, 2 ↦ h₁\}$, which induces a new hypothesis $h₃ : 300 ≤ 302$ to be added later.
+Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : 300 ≤ 302$ to be added later.
 
 For slot 2, we add $h₂$ to $H_{y}(2, 300)$.
 There are no compatible matches at level 1, so we are done with $h₂$, yielding the following final rule state.
@@ -478,8 +478,8 @@ There are no compatible matches at level 1, so we are done with $h₂$, yielding
     \end{center}
 
 \paragraph{Example 2.}
-We now consider a rule $s : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
-We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $s$, starting with $h₁$:
+We now consider a rule $r₂ : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
+We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $r₂$, starting with $h₁$:
 % NOTE : remove comments to get full trees.
 \begin{center}
   \begin{tikzpicture}[level distance=12mm, scale=0.50]
@@ -534,7 +534,7 @@ We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule 
   \end{tikzpicture}
 \end{center}
 At this point there are no matches, so there is nothing to extend.
-We now add $h_2 : A~a~b$, which initially generates a match $m = \{1 ↦ h₂\}$ that is added to $M$:
+We now add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that is added to $M$:
 % NOTE : uncomment to get full trees.
 \begin{center}
   \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
@@ -681,11 +681,11 @@ This helps, for example, with the defining rule for involutive functions: if $f 
 When this rule is used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but with lazy insertion we only process $a$ if there is, in fact, an involutive function is the context.
 
 \paragraph{Match Equivalence.}
-Naively, two matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ and $\{1 ↦ h₁', \dots, n ↦ hₙ'\}$ would be considered equal if they are structurally equal, i.e.\ $h₁ = h₁'$, \dots, $hₙ = hₙ'$.
+Naively, two matches $[h₁, \dots, hₙ]$ and $[h₁', \dots, hₙ']$ would be considered equal if they are structurally equal, i.e.\ $h₁ = h₁'$, \dots, $hₙ = hₙ'$.
 However, consider the rule $r : \All{x~y}{P~x~y → Q~x~z → R~x}$ and the hypotheses $h₁ : P~a~b$, $h₂ : P~a~c$, $h₃ : Q~a~d$ and $h₄ : Q~a~e$.
-The complete matches $m₁ ≔ \{1 ↦ h₁, 2 ↦ h₃\}$ and $m₁' ≔ \{1 ↦ h₁, 2 ↦ h₄\}$ are structurally different, but the difference does not matter because the applications $r~h₁~h₃$ and $r~h₁~h₄$ both have type $R~a$.
+The complete matches $m₁ ≔ [h₁, h₃]$ and $m₁' ≔ [h₁, h₄]$ are structurally different, but the difference does not matter because the applications $r~h₁~h₃$ and $r~h₁~h₄$ both have type $R~a$.
 Generating both $m₁$ and $m₁'$ would therefore be redundant.
-Similarly, the partial matches $m₂ ≔ \{1 ↦ h₁\}$ and $m₂' ≔ \{1 ↦ h₂\}$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete $m₂$ and $m₂'$.
+Similarly, the partial matches $m₂ ≔ [h₁]$ and $m₂' ≔ [h₂]$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete $m₂$ and $m₂'$.
 Hence we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
 Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ with conclusion $A$ equal if $\lvl(m) = \lvl(m')$ and for each variable $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
 To ensure that we respect definitional equality, the instantiations in the substitutions are kept in RPINF.
@@ -849,7 +849,7 @@ An obvious question is then how well does the stateful algorithm behave when the
 
 Given a set of propositions $\mathcal{P} := \{P_{i,j} | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i} | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : P_{i,1}\to \dots P_{i,6} \to Q_i$.
 The procedures are then run on a context containing exactly $\mathcal{P}$.
-In this case, we sketch the behavior of the stateless algorithm:
+In this case, we sketch the behaviour of the stateless algorithm:
 It pick a first hypothesis, $h_{i,j} : P_{i,j}$.
 If $j < 6$, the index returns nothing and it selects another hypothesis.
 For $h_{i,6} : P_{i,6}$, the rule $r_i$ is selected, and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
