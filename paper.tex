@@ -686,8 +686,8 @@ We believe that repeatedly performing such unifications would generally be more 
 \paragraph{Lazy Insertion.}
 Adding a hypothesis to a rule state is fairly cheap, but not free: it involves one unification for each premise that the hypothesis likely matches (according to a discrimination tree index), followed by several operations on the variable indices.
 We therefore delay insertions until the index has selected at least one hypothesis for each slot.
-This helps, for example, with the definitional rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
-When used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but this is only relevant if there is, in fact, an involutive function is the context.
+This helps, for example, with the defining rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
+When this rule is used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but with lazy insertion we only process $a$ if there is, in fact, an involutive function is the context.
 
 \paragraph{Match Equivalence.}
 Naively, two matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ and $\{1 ↦ h₁', \dots, n ↦ hₙ'\}$ would be considered equal if they are structurally equal, i.e.\ $h₁ = h₁'$, \dots, $hₙ = hₙ'$.
