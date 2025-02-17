@@ -148,7 +148,7 @@
 
 \section{Introduction}
 
-In many proof assistants, simple \enquote*{white-box} automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, Lean's (TODO ref) Aesop (TODO ref), etc.
+In many proof assistants, simple \enquote*{white-box} automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, various PVS (TODO ref) tactics, Lean's (TODO ref) Aesop (TODO ref), etc.
 These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
 Faced with an initial goal, the tactics try various user-specified \emph{rules}, which correspond to admissible inferences in the prover's logic.
 A successful rule reduces the current goal to zero or more subgoals, which are solved recursively until either a full proof is found or no rule applies to any open goal or the search times out.
@@ -157,12 +157,12 @@ Typical rules would be the $∧$-introduction lemma $A → B → A ∧ B$, which
 Such \emph{backward rules} are the most common rule type, but most search tactics allow users to use any tactic as a rule.
 These rule tactics can output arbitrary subgoals, subject only to the condition that proofs of the returned subgoals can be assembled into a proof of the goal on which the rule was run.
 
-ACL2 and Aesop additionally provide special support for \emph{forward rules}.
-Given, for example, the transitivity lemma $\All{x~y~z}{x < y → y < z → x < z}$, a forward rule run on the goal $a < b,\, b < c ⊢ A$ produces the single subgoal $a < b,\, b < c,\, a < c ⊢ A$.
+ACL2, PVS and Aesop provide special support for \emph{forward rules}.
+Given, for example, the transitivity lemma $\All{x~y~z}{x < y → y < z → x < z}$, a forward rule run on the goal $h₁ : a < b,\, h₂ : b < c ⊢ A$ produces the single subgoal $h₁ : a < b,\, h₂ : b < c,\, h₃ : a < c ⊢ A$.
 Hence forward rules can be used to establish additional facts that may be relevant for other rules.
 For example, the Aeneas project (TODO ref) uses Aesop's forward rules \jcom{(ensure that this is accurate)} in its proof automation to establish facts that are later used by an arithmetic decision procedure.
 
-However, Aesop's (and ACL2's) support for forward rules was, until recently, quite basic.
+However, Aesop's support for forward rules was, until recently, quite basic.
 In particular, each forward rule was tried on each goal separately (subject to pre-filtering by a discrimination tree (TODO ref) index).
 This is wasteful since in practice, many rules produce subgoals with a similar---or even the same---context as the initial goal.
 For example, the ∧-introduction rule affects only the goal's target, not its context.
