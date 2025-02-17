@@ -854,7 +854,7 @@ This reduces the complexity of the incremental algorithm to $O(n)$.
 
 \paragraph{Independent Rules.}
 In the last example, part of the stateful algorithm's success stems from the fact that it could reuse a lot of its previous work.
-An obvious question is then how well does the stateful algorithm work when there is no work to be reused.
+An obvious question is then how well does the stateful algorithm behave when there is no work to be reused.
 
 Given a set of propositions $\mathcal{P} := \{P_{i,j} | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i} | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : P_{i,1}\to \dots P_{i,6} \to Q_i$.
 The procedures are then run on a context containing exactly $\mathcal{P}$.
@@ -884,9 +884,9 @@ The stateless algorithm gets progressively slower the further the removed premis
         xlabel={Depth},
         ylabel={Time in ms},
         xmin=1, xmax=6,
-        ymin=0, ymax=650,
+        ymin=0, ymax=2^10,
         xtick={1,2,3,4,5,6},
-        ytick={2^2,2^4,2^6,2^8},
+        ytick={4,16,64,256,1024},
         ymode=log,
         log basis y=2,
         legend pos=north west,
@@ -937,7 +937,7 @@ The stateless algorithm gets progressively slower the further the removed premis
         xlabel={Depth},
         %ylabel={Time in ms},
         xmin=1, xmax=6,
-        ymin=0, ymax=128,
+        ymin=0, ymax=170,
         xtick={1,2,3,4,5,6},
         ytick={2^1,2^3,2^5,2^7},
         ymode=log,
