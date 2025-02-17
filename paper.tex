@@ -683,10 +683,11 @@ For example, we could use Lean's implementation of imperfect discrimination tree
 However, since these discrimination trees are imperfect, they may return spurious lookup results, so whether a lookup result is valid must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
 We believe that repeatedly performing such unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
-\paragraph{Indexing.}
-When adding a hypothesis $h : T$ to the partial match state, we add it to the rule state of each rule $r$ such that $h$ matches a slot of $r$.
-To optimise this operation, we use an imperfect discrimination tree index that, for each rule $r$ with slot $i$ corresponding to a premise of type $Tᵢ$, maps the type $Tᵢ$ to the pair $(r, i)$.
-Querying this index for $T$ quickly determines all rules and slots for which $h$ is likely relevant.
+\paragraph{Lazy Insertion.}
+Adding a hypothesis to a rule state is fairly cheap, but not free: it involves one unification for each premise that the hypothesis likely matches (according to a discrimination tree index), followed by several operations on the variable indices.
+We therefore delay insertions until the index has selected at least one hypothesis for each slot.
+This helps, for example, with the definitional rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
+When used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but this is only relevant if there is, in fact, an involutive function is the context.
 
 \paragraph{Match Equivalence.}
 Naively, two matches $\{1 ↦ h₁, \dots, n ↦ hₙ\}$ and $\{1 ↦ h₁', \dots, n ↦ hₙ'\}$ would be considered equal if they are structurally equal, i.e.\ $h₁ = h₁'$, \dots, $hₙ = hₙ'$.
