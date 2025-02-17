@@ -675,7 +675,7 @@ However, since these discrimination trees are imperfect, they may return spuriou
 We believe that repeatedly performing such unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
 \paragraph{Lazy Insertion.}
-Adding a hypothesis to a rule state is fairly cheap, but not free: it involves one unification for each premise that the hypothesis likely matches (according to a discrimination tree index), followed by several operations on the variable indices.
+Adding a hypothesis to a rule state is fairly cheap, but not free: it involves one unification for each slot that the hypothesis likely matches (according to a discrimination tree index), followed by several operations on the variable indices.
 We therefore delay insertions until the index has selected at least one hypothesis for each slot.
 This helps, for example, with the defining rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
 When this rule is used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but with lazy insertion we only process $a$ if there is, in fact, an involutive function is the context.
@@ -772,7 +772,7 @@ We can therefore use moderately large numbers to simulate the bigger unification
           };
       \end{axis}
     \end{tikzpicture}
-    \caption{Transitivity benchmark}
+    \caption{Transitivity benchmark}%
     \label{fig:trans}
   \end{subfigure}%
   \begin{subfigure}{.5\textwidth}
@@ -825,10 +825,10 @@ We can therefore use moderately large numbers to simulate the bigger unification
       \end{axis}
     \end{tikzpicture}
     % graph \includegraphics[width=.4\linewidth]{image1}
-    \caption{Independence benchmark}
+    \caption{Independence benchmark}%
     \label{fig:indep}
   \end{subfigure}
-  \caption{The above results depict the behavior of both algorithms in a context where there is a lot of work that can be reused (Transitivity) and no work to be reused (Independence). The lines with square entry points represent problems where unification is easy. The lines with circle entry points are the same tests with hard unification problems.}
+  \caption{The above results depict the behavior of both algorithms in a context where there is a lot of work that can be reused (Transitivity) and no work to be reused (Independence). The lines with square entry points represent problems where unification is easy. The lines with circle entry points are the same tests with hard unification problems.}%
   \label{fig:benchmark}
   \end{figure}
 
@@ -917,7 +917,7 @@ The stateless algorithm gets progressively slower the further the removed premis
           };
       \end{axis}
     \end{tikzpicture}
-    \caption{Depth benchmark no-precompilation}
+    \caption{Depth benchmark no-precompilation}%
     \label{fig:erase-noprecomp}
   \end{subfigure}%
   \begin{subfigure}{.5\textwidth}
@@ -971,10 +971,10 @@ The stateless algorithm gets progressively slower the further the removed premis
       \end{axis}
     \end{tikzpicture}
     % graph \includegraphics[width=.4\linewidth]{image1}
-    \caption{Depth benchmark with precompilation}
+    \caption{Depth benchmark with precompilation}%
     \label{fig:erase-precomp}
   \end{subfigure}
-  \caption{The above results depict the behavior of both algorithms in depending on the \text{depth} of potential partial matches. The lines with square entry points represent problems where unification is easy. The lines with circle entry points are the same tests with hard unification problems.}
+  \caption{The above results depict the behavior of both algorithms in depending on the \text{depth} of potential partial matches. The lines with square entry points represent problems where unification is easy. The lines with circle entry points are the same tests with hard unification problems.}%
   \label{fig:erase}
   \end{figure}
 
