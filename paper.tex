@@ -139,7 +139,7 @@
   In this setting we consider \emph{forward rules}, which apply a given theorem, say, $A → B → C$, to any goal containing hypotheses $A$ and $B$, adding $C$ as a new hypothesis.
   When treated naively, such rules are tried on every goal encountered during the search, leading to repeated unifications of premises $A$ and $B$ with the hypotheses of each goal.
   We present an approach to forward rules that avoids some of this repeated work by taking advantage of similarities between successive goals.
-  For each goal, we cache partial applications of forward rules in a custom data structure, the \emph{partial match state}, which enables efficient updates.
+  For each goal, we cache partial applications of forward rules in a custom data structure, the \emph{forward state}, which enables efficient updates.
   Our technique is compatible with any search strategy and most logics.
   It has been implemented in Aesop.
 
@@ -176,12 +176,12 @@ Hence it is generally cheaper (and often much cheaper) to start with the partial
 The update first deletes partial matches that include hypotheses no longer present in $Δᵢ$.
 Afterwards it adds new partial matches for the hypotheses that are new in $Δᵢ$, extending the existing partial matches for a rule if the new hypothesis is compatible with them.
 Whenever this process produces a full match---i.e., all premises of a forward rule are satisfied by a set of hypothesis in $Δᵢ$---the rule is applied and adds a corresponding new hypothesis to $Δᵢ$.
-Our main contribution is a data structure, the \emph{partial match state}, that organises the partial matches in such a way that the update can be done efficiently.
+Our main contribution is a data structure, the \emph{forward state}, that organises the partial matches in such a way that the update can be done efficiently.
 
-In addition to this \emph{incrementality}, the partial match state satisfies two other desiderata:
+In addition to this \emph{incrementality}, the forward state satisfies two other desiderata:
 \begin{itemize}
-  \item It is \emph{persistent}, i.e.\ partial match states for parent and child goals share much of their structure.
-        This is desirable since Aesop supports search strategies other than depth-first search and must therefore keep all goals encountered during the search, along with their partial match states, in memory.
+  \item It is \emph{persistent}, i.e.\ forward states for parent and child goals share much of their structure.
+        This is desirable since Aesop supports search strategies other than depth-first search and must therefore keep all goals encountered during the search, along with their forward states, in memory.
   \item It reduces the number of \emph{unifications} performed when matching hypotheses against rule premises.
         In dependent type theory, unification happens up to definitional equality, which makes it quite expensive.
         We therefore want to avoid redundant unifications.
@@ -259,23 +259,23 @@ In particular, the contexts of subgoals produced by whatever rule is eventually 
 With the weaknesses of the naive approach in mind, we introduce an incremental, stateful solution to the problem of finding complete matches.
 The main idea is to store, for each goal $Γ ⊢ A$, the partial matches implied by the hypotheses in $Γ$, and to reuse these partial matches for subgoals $Δ ⊢ B$.
 This rests on the assumption that $Δ$ is likely similar to $Γ$ in practice, and that it is therefore cheaper to update the partial matches for $Γ$ than to compute those of $Δ$ from scratch.
-Our main contribution is a data structure, the \emph{partial match state}, that allows us to perform these updates efficiently.
+Our main contribution is a data structure, the \emph{forward state}, that allows us to perform these updates efficiently.
 
-\paragraph{Partial Match State.}
-We associate to each goal in Aesop's search tree a partial match state that reflects the goal's context.
-Let $\States$ be the set of partial match states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
-The partial match state's interface then consists of two functions
+\paragraph{Forward State.}
+We associate to each goal in Aesop's search tree a forward state that reflects the goal's context.
+Let $\States$ be the set of forward states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
+The forward state's interface then consists of two functions
 \begin{equation*}
   \addHyp : \States → \Hyps → \States × \powerset(\Rules × \CMatches) \qquad \delHyp : \States → \Hyps → \States
 \end{equation*}
-The $\addHyp$ function adds a hypothesis to the partial match state.
-Hence, if $s$ is the partial match state corresponding to context $Γ$ and $\addHyp(s, h : T) = (s', M)$, then $s'$ is the partial match state corresponding to $Γ,\, h : T$.
-Similarly, if $s$ is the partial match state corresponding to $Γ, h : T$, then $\delHyp(s, h : T)$ is the partial match state corresponding to $Γ$.
+The $\addHyp$ function adds a hypothesis to the forward state.
+Hence, if $s$ is the forward state corresponding to context $Γ$ and $\addHyp(s, h : T) = (s', M)$, then $s'$ is the forward state corresponding to $Γ,\, h : T$.
+Similarly, if $s$ is the forward state corresponding to $Γ, h : T$, then $\delHyp(s, h : T)$ is the forward state corresponding to $Γ$.
 The second output of $\addHyp$, $M$, is a set of pairs $(r, m)$ where $r$ is a rule and $m$ is a complete match for $r$.
 These are the matches that were completed by adding $h : T$.
 
-When Aesop is run on an initial goal with context $h₁ : T₁, \dots, hₙ : Tₙ$, the partial match state for it is built by starting with an empty state and applying $\addHyp$ to each hypothesis $hᵢ$.
-Afterwards, whenever an Aesop rule is run on a goal with context $Γ$, producing subgoals with contexts $Δ₁, \dots, Δₙ$, we derive the partial match state for each subgoal context $Δⱼ$ from the partial match state for $Γ$, in two steps:
+When Aesop is run on an initial goal with context $h₁ : T₁, \dots, hₙ : Tₙ$, the forward state for it is built by starting with an empty state and applying $\addHyp$ to each hypothesis $hᵢ$.
+Afterwards, whenever an Aesop rule is run on a goal with context $Γ$, producing subgoals with contexts $Δ₁, \dots, Δₙ$, we derive the forward state for each subgoal context $Δⱼ$ from the forward state for $Γ$, in two steps:
 \begin{enumerate}
   \item Apply $\delHyp$ once for each hypothesis that was deleted, i.e.\ that appears in $Γ$ but not in $Δⱼ$.
   \item Apply $\addHyp$ once for each hypothesis that was added, i.e.\ that appears in $Δⱼ$ but not in $Γ$.
@@ -283,10 +283,10 @@ Afterwards, whenever an Aesop rule is run on a goal with context $Γ$, producing
 Changes to a hypothesis (e.g.\ a change of its type) are treated as a deletion followed by an addition.
 
 \paragraph{Rule State.}
-Partial matches are specific to each rule, so the partial match state naturally decomposes into a set of \emph{rule states}, one per rule.
+Partial matches are specific to each rule, so the forward state naturally decomposes into a set of \emph{rule states}, one per rule.
 Given a goal $Γ ⊢ A$ and a rule $r$, the rule state for $r$ contains exactly the partial matches of $r$ in context $Γ$.
-A rule state supports $\addHyp$ and $\delHyp$ methods analogous to those on partial match states.
-Adding a hypothesis to a partial match state then amounts to adding it to each rule state (which may yield new complete matches for the rule); deleting a hypothesis amounts to deleting it from each rule state.
+A rule state supports $\addHyp$ and $\delHyp$ methods analogous to those on forward states.
+Adding a hypothesis to a forward state then amounts to adding it to each rule state (which may yield new complete matches for the rule); deleting a hypothesis amounts to deleting it from each rule state.
 We initially focus on how to add hypotheses, since this question motivates much of the design of the rule state data structure.
 
 When a hypothesis is added to a rule state, two things can happen.
@@ -406,7 +406,7 @@ Finding a complete match for a rule amounts to finding one complete match for ea
 The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
 
 \paragraph{Deletion.}
-When a hypothesis $h$ is removed from a goal's context, we must update the partial match state accordingly.
+When a hypothesis $h$ is removed from a goal's context, we must update the forward state accordingly.
 This means deleting $h$ from any rule state to which it was previously added, i.e.\ from any rule state for a rule $r$ with a slot $i$ matching $h$.
 To facilitate deletion, we cache this information when $h$ is added to the rule state.
 When $h$ is deleted, we can then efficiently determine the relevant rule states and delete $h$ from the hypothesis index $H$ at slot $i$ and from the match index $M$ at all slots $j ≥ i$.
@@ -997,7 +997,7 @@ Nevertheless, our technique bears some resemblance to the RETE algorithm (TODO r
 
 The Prolog-based first-order theorem prover SATCHMO (TODO ref) and its many descendants also use mixed-mode reasoning.
 SATCHMO's search procedure can be viewed as a special case of our technique: a given set of implications are used as forward rules and a single case-splitting rule splits any goal with hypothesis $h : B₁ ∨ \dots ∨ Bₘ$ into $m$ goals with hypotheses $h₁ : B₁, \dots, hₘ : Bₘ$.
-A SATCHMO-style prover may benefit from our incremental approach if the set of implications is large, though in a setting where unification is cheap it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the partial match state.
+A SATCHMO-style prover may benefit from our incremental approach if the set of implications is large, though in a setting where unification is cheap it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the forward state.
 SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, which provides a form of incrementality.
 
 \jcom{auto2?}
