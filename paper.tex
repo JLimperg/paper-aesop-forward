@@ -936,7 +936,7 @@ However, to our knowledge, rules in these systems cannot change the assumptions 
 Nevertheless, our technique bears some resemblance to the RETE algorithm (TODO ref) for forward reasoning in large knowledge bases.
 
 The Prolog-based first-order theorem prover SATCHMO (TODO ref) and its many descendants also use mixed-mode reasoning.
-SATCHMO's search procedure can be viewed as a special case of our technique: a given set of implications are used as forward rules and a single case-splitting rule splits any goal with hypothesis $h : B₁ ∨ \dots ∨ Bₘ$ into $m$ goals with hypotheses $h₁ : B₁, \dots, hₘ : Bₘ$.
+SATCHMO's search procedure can be viewed as a special case of our technique: a given set of implications are used as forward rules and a single non-forward rule performs case analysis on disjunctive hypotheses.
 A SATCHMO-style prover may benefit from our incremental approach if the set of implications is large, though in a setting where unification is cheap it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the forward state.
 SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, which provides a form of incrementality.
 
