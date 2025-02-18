@@ -440,47 +440,36 @@ At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:stat
     \begin{subcaptiongroup}
       \subcaptionlistentry{}
       \begin{minipage}{0.5\textwidth}
-        \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+        \begin{tikzpicture}[outer sep=auto, level distance=4em, scale=0.50]
           \node at (-2,0) {\captiontext*{}\label{fig:example1:state1}};
-          \node[xshift = 0] {$H_{y}$}
-            child {node {2}
-              child {node {$301$}
-                child {node {$\{h₁\}$}}}
-            %  child {node {$300$}
-            %    child {node {$\{\}$}}}
-            };
-          \node[xshift=80] {$M_y$}
-            child {node {1}
-              child {node {$302$}
-                child {node {$\{[h₁]\}$}}}
-            %  child {node {$301$}
-            %    child {node {$\{\}$}}}
-            };
-            %child {node[xshift=20] {2}
-            %  child {node {$301$}
-            %    child {node[yshift=-2em] {$\{\}$}}}};
+          \node {$H_{y}\colon$};
+          \node at (1.5,0) {2}
+            child {node {$301$}
+              child {node {$\{h₁\}$}}};
+          \node at (5, 0) {$M_y\colon$};
+          \node at (6.5, 0) {1}
+            child {node {$302$}
+              child {node {$\{[h₁]\}$}}};
         \end{tikzpicture}
       \end{minipage}
     \end{subcaptiongroup}
     \begin{subcaptiongroup}
       \subcaptionlistentry{}
       \begin{minipage}{0.5\textwidth}
-        \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+        \begin{tikzpicture}[outer sep=auto, level distance=4em, scale=0.50]
           \node at (-2,0) {\captiontext*{}\label{fig:example1:state2}};
-          \node[xshift = 0] {$H_y$}
-            child {node {2}
-              child {node {$301$}
-                child {node {$\{h₁\}$}}}
-              child {node {$300$}
-                child {node {$\{h₂\}$}}}
-            };
-          \node[xshift=80] {$M_y$}
-            child {node {1}
-              child[xshift=-20] {node {$302$}
-                child {node {$\{[h₁]\}$}}}
-              child[xshift=20] {node {$301$}
-                child {node {$\{[h₂]\}$}}}
-            };
+          \node {$H_y\colon$};
+          \node at (1.5, 0) {2}
+            child {node[xshift=-2] {$301$}
+              child {node {$\{h₁\}$}}}
+            child {node[xshift=2] {$300$}
+              child {node {$\{h₂\}$}}};
+          \node at (5, 0) {$M_y\colon$};
+          \node at (6.5, 0) {1}
+            child {node[xshift=-2] {$302$}
+              child {node {$\{[h₁]\}$}}}
+            child {node[xshift=2] {$301$}
+              child {node {$\{[h₂]\}$}}};
         \end{tikzpicture}
       \end{minipage}
     \end{subcaptiongroup}
@@ -489,48 +478,24 @@ At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:stat
   \begin{subcaptiongroup}
     \subcaptionlistentry{}
     \begin{minipage}{\textwidth}
-      \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+      \begin{tikzpicture}[outer sep=auto, level distance=4em, scale=0.50]
         \node at (-2,0) {\captiontext*{}\label{fig:example2:state1}};
-        \node[xshift = 0] {$H_x$}
-            child {node {2}
-                child {node {$a$}
-                    child {node {$\{h_1\}$}}}
-                %child {node {$b$}
-                %    child {node {$\{ \}$}}}
-                };
-        \node[xshift = 80] {$H_y$}
-            child {node {2}
-                child {node {$a$}
-                    child {node {$\{h_1\}$}}}
-                %child {node {$b$}
-                %    child {node {$\{ \}$}}}
-                    };
-        \node[xshift = 160, yshift = 0] {$M_x$}
-            child {node {1}
-                child {node {$a$}
-                    child {node {$\{[h_2]\}$}}}
-                %child {node {$b$}
-                %   child {node {$\{ \}$}}}
-                    };
-            %child[xshift = 20] {node {2}
-            %    child {node {$a$}
-            %        child {node {$\{\}$}}}
-            %    child {node {$b$}
-            %        child {node {$\{ \}$}}}
-            %};
-        \node[xshift = 240, yshift = 0] {$M_y$}
-            child {node {1}
-            %    child {node {$a$}
-            %        child {node {$\{ \}$}}}
-                child {node {$b$}
-                    child {node {$\{[h_2]\}$}}}
-            };
-            %child[xshift = 20] {node {2}
-            %    child {node {$a$}
-            %        child {node {$\{\}$}}}
-            %    child {node {$b$}
-            %        child {node {$\{ \}$}}}
-            %};
+        \node {$H_x\colon$};
+        \node at (1.5, 0) {2}
+          child {node {$a$}
+            child {node {$\{h_1\}$}}};
+        \node at (5, 0) {$H_y\colon$};
+        \node at (6.5, 0) {2}
+          child {node {$a$}
+            child {node {$\{h_1\}$}}};
+        \node at (10, 0) {$M_x\colon$};
+        \node at (11.5, 0) {1}
+          child {node {$a$}
+            child {node {$\{[h_2]\}$}}};
+        \node at (15, 0) {$M_y\colon$};
+        \node at (16.5, 0) {1}
+          child {node {$b$}
+            child {node {$\{[h_2]\}$}}};
       \end{tikzpicture}
     \end{minipage}
   \end{subcaptiongroup}
@@ -540,33 +505,24 @@ At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:stat
     \begin{minipage}{\textwidth}
       \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
         \node at (-2,0) {\captiontext*{}\label{fig:example2:state2}};
-        \node[xshift = 0] {$H_x$}
-          child {node {2}
-              child {node {$a$}
-                  child {node {$\{h_1, h_3\}$}}}
-              %child {node {$b$}
-              %    child {node {$\{ \}$}}}
-              };
-        \node[xshift = 80] {$H_y$}
-          child {node {2}
-              child {node {$a$}
-                  child {node {$\{h_1\}$}}}
-              child {node {$b$}
-                  child {node {$\{h_3\}$}}}};
-        \node[xshift = 160, yshift = 0] {$M_x$}
-          child {node {1}
-              child {node {$a$}
-                  child {node {$\{[h_2]\}$}}}
-              %child {node {$b$}
-              %   child {node {$\{ \}$}}}
-                  };
-        \node[xshift = 240, yshift = 0] {$M_y$}
-          child {node {1}
-          %    child {node {$a$}
-          %        child {node {$\{ \}$}}}
-              child {node {$b$}
-                  child {node {$\{[h_2]\}$}}}
-          };
+        \node {$H_{x}\colon$};
+        \node at (1.5, 0) {2}
+          child {node {$a$}
+            child {node {$\{h_1, h_3\}$}}};
+        \node at (5, 0) {$H_y\colon$};
+        \node at (6.5, 0) {2}
+          child {node {$a$}
+            child {node {$\{h_1\}$}}}
+          child {node {$b$}
+            child {node {$\{h_3\}$}}};
+        \node at (10, 0) {$M_x\colon$};
+        \node at (11.5, 0) {1}
+          child {node {$a$}
+            child {node {$\{[h_2]\}$}}};
+        \node at (15, 0) {$M_y\colon$};
+        \node at (16.5, 0) {1}
+          child {node {$b$}
+            child {node {$\{[h_2]\}$}}};
       \end{tikzpicture}
     \end{minipage}
   \end{subcaptiongroup}
