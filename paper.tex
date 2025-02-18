@@ -25,6 +25,10 @@
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
 \def\orcid#1{{\href{http://orcid.org/#1}{\protect\raisebox{-1.25pt}{\protect\includegraphics{orcid.pdf}}}}}
+\def\showpgfcircle{\tikz[baseline=-0.7ex]\node[mark size=0.7ex]
+{\pgfuseplotmark{o}};}
+\def\showpgfsquare{\tikz[baseline=-0.7ex]\node[mark size=0.7ex]
+{\pgfuseplotmark{square}};}
 \SetKw{KwIn}{in}
 \SetKw{KwLet}{let}
 \SetKw{KwYield}{yield}
@@ -675,22 +679,23 @@ There are unfortunately no standard benchmarks for Aesop-like tactics, and since
 Additionally, forward rules are currently little used by Aesop's main client, the Mathlib mathematics library (TODO ref).
 We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that showcase the performance characteristics of incremental forward reasoning.
 
-For each benchmark, we set up certain forward rules and a goal with certain hypotheses.
+For each benchmark, we set up certain forward rules and a goal with handpicked hypotheses.
 We then run the \texttt{saturate} tactic, which uses either naive or incremental forward reasoning to exhaustively apply the forward rules.
 Performing only forward reasoning is the best-case scenario for the incremental algorithm since previous results can be fully reused.
 When forward reasoning is combined with other rules, we would expect smaller gains, depending on how much reuse the non-forward rules allow.
 
+In what follows, instead of the natural number type of Lean's standard library, which has special support in the compiler and kernel, we use a custom type of Peano naturals.
+Unifying two concrete Peano natural numbers $n$ and $m$ involves comparing $\min(n, m)$ constructors.
+We can therefore use moderately large numbers to simulate the bigger unification problems that Aesop encounters, for example, in Mathlib's category theory development.
+
 Benchmark code and data are available in our supplement (TODO ref).
-The results shown below were obtain on a Macbook Pro with an Apple~M2 Pro processor and \SI{32}{GB} of RAM, averaging over \textcolor{red}{N} (TODO) runs per benchmark.
+The results shown below were obtained on a MacBook Pro with an Apple~M2 Pro processor and \SI{32}{GB} of RAM.
+The results are an average of \textcolor{red}{N} (TODO) runs per benchmark.
 
 \paragraph{Transitivity.}
 Our first benchmark is a scaled-up variant of the transitivity example from Sec.~\ref{sec:incremental}.
-Given some relation $≺$ on natural numbers, we register the lemma $\All{x~y}{x ≺ y → y ≺ z → x ≺ z}$ as the sole forward rule and set up a goal with hypotheses $h₁ : a ≺ a + 1, \dots, hₙ : a + n - 1 ≺ a + n$ (TODO what is $a$?).
+Given some relation $≺$ on natural numbers, we register the lemma $\All{x~y}{x ≺ y → y ≺ z → x ≺ z}$ as the sole forward rule and set up a goal with hypotheses $h₁ : a ≺ a + 1, \dots, hₙ : a + n - 1 ≺ a + n$. The test is run for $a = 0$, represented with a square \protect\showpgfsquare\, and $a = 100$, represented with a circle \protect\showpgfcircle\.
 Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
-
-Instead of the natural number type of Lean's standard library, which has special support in the compiler and kernel, we use a custom type of Peano naturals.
-Unifying two concrete Peano natural numbers $n$ and $m$ involves comparing $\min(n, m)$ constructors.
-We can therefore use moderately large numbers to simulate the bigger unification problems that Aesop encounters, for example, in Mathlib's category theory development.
 
 \begin{figure}
   \centering
@@ -701,9 +706,9 @@ We can therefore use moderately large numbers to simulate the bigger unification
         xlabel={Number of hypotheses},
         ylabel={Time in ms},
         xmin=1, xmax=16,
-        ymin=2^3, ymax=2^13,
-        xtick={1,2,4,8,16},
-        ytick={2^3,2^5,2^7,2^9,2^11,2^13},
+        ymin=4, ymax=2^15,
+        %xtick={1,2,4,8,16},
+        %ytick={2^3,2^5,2^7,2^9,2^11,2^13},
         xmode=log,
         ymode=log,
         log basis x=2,
@@ -718,7 +723,7 @@ We can therefore use moderately large numbers to simulate the bigger unification
           mark=square,
           ]
           coordinates {
-            (1, 7.663472) (2, 9.354750) (4, 15.768194) (8, 104.921791) (16, 1882.683111)
+            (1, 7.663472) (2, 9.354750) (4, 15.768194) (8, 104.921791) (16, 1882.683111) % (32, 1175.888750) 
           };
         \addlegendentry{naive}
         \addplot[
@@ -726,7 +731,7 @@ We can therefore use moderately large numbers to simulate the bigger unification
           mark=square,
           ]
           coordinates {
-            (1, 10.308541) (2, 10.704638) (4, 16.274305) (8, 38.800833) (16, 179.697681)
+            (1, 10.308541) (2, 10.704638) (4, 16.274305) (8, 38.800833) (16, 179.697681) % (32, 45220.919667) 
           };
         \addlegendentry{incremental}
         \addplot[
@@ -734,14 +739,14 @@ We can therefore use moderately large numbers to simulate the bigger unification
           mark=o,
           ]
           coordinates {
-            (1, 10.591138) (2, 23.881333) (4, 142.013389) (8, 1676.148375) (16, 24327.359417)
+            (1, 10.591138) (2, 23.881333) (4, 142.013389) (8, 1676.148375) (16, 24327.359417) %(32, 392049.849708) 
           };
         \addplot[
           color=blue,
           mark=o,
           ]
           coordinates {
-            (1, 13.974694) (2, 26.216833) (4, 68.953444) (8, 245.601028) (16, 1028.670680)
+            (1, 13.974694) (2, 26.216833) (4, 68.953444) (8, 245.601028) (16, 1028.670680) %(32, 4388.917500) 
           };
       \end{axis}
     \end{tikzpicture}
@@ -755,7 +760,7 @@ We can therefore use moderately large numbers to simulate the bigger unification
         xlabel={Number of Rules},
         %ylabel={Time in ms},
         xmin=1, xmax=32,
-        ymin=2^3, ymax=1700,
+        ymin=4, ymax=2^15,
         ymode=log,xmode=log,
         log basis x=2,
         log basis y=2,
@@ -801,11 +806,14 @@ We can therefore use moderately large numbers to simulate the bigger unification
     \caption{Independence benchmark}%
     \label{fig:indep}
   \end{subfigure}
-  \caption{The above results depict the behavior of both algorithms in a context where there is a lot of work that can be reused (Transitivity) and no work to be reused (Independence). The lines with square entry points represent problems where unification is easy. The lines with circle entry points are the same tests with hard unification problems.}%
+  \caption{The above results depict the behavior of both algorithms in a context where a lot of work can be reused (Transitivity) and in another where no work can be reused (Independence). 
+  In both benchmarks, results denoted with a square \protect\showpgfsquare\ come from a context where the argument of the predicates is small ($a = 0$), leading to easy unification problems; results denoted with a circle \protect\showpgfcircle\ come from a context where the unification problem is hard ($a = 100$).}%
   \label{fig:benchmark}
   \end{figure}
 
-The results in Fig.~\ref{fig:trans} are unsurprising.
+We see in Fig.~\ref{fig:trans} that the incremental algorithm has a sizable advantage over the naive algorithm.
+An important detail is that the scales are logarithmic
+These results are unsurprising:
 The naive algorithm goes over the context, containing initially $n$ hypotheses, and compares all hypotheses pairwise.
 This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so the overall complexity is $O(n^4)$.
 The incremental algorithm considers each hypothesis only once.
@@ -820,12 +828,12 @@ This reduces the complexity of the incremental algorithm to $O(n)$.
 In the last example, part of the stateful algorithm's success stems from the fact that it could reuse a lot of its previous work.
 An obvious question is then how well does the stateful algorithm behave when there is no work to be reused.
 
-Given a set of propositions $\mathcal{P} := \{P_{i,j} | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i} | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : P_{i,1}\to \dots P_{i,6} \to Q_i$.
+Given a set of predicates $\mathcal{P} := \{P_{i,j} (x) | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i}(x) | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : \forall x, P_{i,1}(x)\to \dots P_{i,6}(x) \to Q_i(x)$.
 The procedures are then run on a context containing exactly $\mathcal{P}$.
 In this case, we sketch the behaviour of the stateless algorithm:
-It pick a first hypothesis, $h_{i,j} : P_{i,j}$.
+It pick a first hypothesis, $h_{i,j} : P_{i,j}(a)$.
 If $j < 6$, the index returns nothing and it selects another hypothesis.
-For $h_{i,6} : P_{i,6}$, the rule $r_i$ is selected, and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
+For $h_{i,6} : P_{i,6}(a)$, the rule $r_i$ is selected, and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
 This gives a complexity of about $O(n^2)$.
 
 For the stateful algorithm, the hypotheses are considered one by one and match directly to the rule and the slot.
