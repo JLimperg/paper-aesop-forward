@@ -428,28 +428,146 @@ No matches at level 1 can be extended by $h₁$ since
 \[
   \bigcap_{x \in \vars(2)} M_{x}(1, σ(x)) = M_{y}(1, 301) = \emptyset
 \]
-At this point, $H$ and $M$ are in the following state.
-\begin{center}
-\begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-  \node[xshift = 0] {$H_{y}$}
-    child {node {2}
-      child {node {$301$}
-        child {node {$\{h₁\}$}}}
-    %  child {node {$300$}
-    %    child {node {$\{\}$}}}
-    };
-  \node[xshift=160] {$M_y$}
-    child {node {1}
-      child {node {$302$}
-        child {node {$\{[h₁]\}$}}}
-    %  child {node {$301$}
-    %    child {node {$\{\}$}}}
-    };
-    %child {node[xshift=20] {2}
-    %  child {node {$301$}
-    %    child {node[yshift=-2em] {$\{\}$}}}};
-\end{tikzpicture}
-\end{center}
+At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:state1}.
+
+\begin{figure}
+  \centering
+  \begin{minipage}{\textwidth}
+    \begin{subcaptiongroup}
+      \subcaptionlistentry{}
+      \begin{minipage}{0.5\textwidth}
+        \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+          \node at (-2,0) {\captiontext*{}\label{fig:example1:state1}};
+          \node[xshift = 0] {$H_{y}$}
+            child {node {2}
+              child {node {$301$}
+                child {node {$\{h₁\}$}}}
+            %  child {node {$300$}
+            %    child {node {$\{\}$}}}
+            };
+          \node[xshift=80] {$M_y$}
+            child {node {1}
+              child {node {$302$}
+                child {node {$\{[h₁]\}$}}}
+            %  child {node {$301$}
+            %    child {node {$\{\}$}}}
+            };
+            %child {node[xshift=20] {2}
+            %  child {node {$301$}
+            %    child {node[yshift=-2em] {$\{\}$}}}};
+        \end{tikzpicture}
+      \end{minipage}
+    \end{subcaptiongroup}
+    \begin{subcaptiongroup}
+      \subcaptionlistentry{}
+      \begin{minipage}{0.5\textwidth}
+        \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+          \node at (-2,0) {\captiontext*{}\label{fig:example1:state2}};
+          \node[xshift = 0] {$H_y$}
+            child {node {2}
+              child {node {$301$}
+                child {node {$\{h₁\}$}}}
+              child {node {$300$}
+                child {node {$\{h₂\}$}}}
+            };
+          \node[xshift=80] {$M_y$}
+            child {node {1}
+              child[xshift=-20] {node {$302$}
+                child {node {$\{[h₁]\}$}}}
+              child[xshift=20] {node {$301$}
+                child {node {$\{[h₂]\}$}}}
+            };
+        \end{tikzpicture}
+      \end{minipage}
+    \end{subcaptiongroup}
+  \end{minipage}
+  \\[1em]
+  \begin{subcaptiongroup}
+    \subcaptionlistentry{}
+    \begin{minipage}{\textwidth}
+      \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+        \node at (-2,0) {\captiontext*{}\label{fig:example2:state1}};
+        \node[xshift = 0] {$H_x$}
+            child {node {2}
+                child {node {$a$}
+                    child {node {$\{h_1\}$}}}
+                %child {node {$b$}
+                %    child {node {$\{ \}$}}}
+                };
+        \node[xshift = 80] {$H_y$}
+            child {node {2}
+                child {node {$a$}
+                    child {node {$\{h_1\}$}}}
+                %child {node {$b$}
+                %    child {node {$\{ \}$}}}
+                    };
+        \node[xshift = 160, yshift = 0] {$M_x$}
+            child {node {1}
+                child {node {$a$}
+                    child {node {$\{[h_2]\}$}}}
+                %child {node {$b$}
+                %   child {node {$\{ \}$}}}
+                    };
+            %child[xshift = 20] {node {2}
+            %    child {node {$a$}
+            %        child {node {$\{\}$}}}
+            %    child {node {$b$}
+            %        child {node {$\{ \}$}}}
+            %};
+        \node[xshift = 240, yshift = 0] {$M_y$}
+            child {node {1}
+            %    child {node {$a$}
+            %        child {node {$\{ \}$}}}
+                child {node {$b$}
+                    child {node {$\{[h_2]\}$}}}
+            };
+            %child[xshift = 20] {node {2}
+            %    child {node {$a$}
+            %        child {node {$\{\}$}}}
+            %    child {node {$b$}
+            %        child {node {$\{ \}$}}}
+            %};
+      \end{tikzpicture}
+    \end{minipage}
+  \end{subcaptiongroup}
+  \\[1em]
+  \begin{subcaptiongroup}
+    \subcaptionlistentry{}
+    \begin{minipage}{\textwidth}
+      \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+        \node at (-2,0) {\captiontext*{}\label{fig:example2:state2}};
+        \node[xshift = 0] {$H_x$}
+          child {node {2}
+              child {node {$a$}
+                  child {node {$\{h_1, h_3\}$}}}
+              %child {node {$b$}
+              %    child {node {$\{ \}$}}}
+              };
+        \node[xshift = 80] {$H_y$}
+          child {node {2}
+              child {node {$a$}
+                  child {node {$\{h_1\}$}}}
+              child {node {$b$}
+                  child {node {$\{h_3\}$}}}};
+        \node[xshift = 160, yshift = 0] {$M_x$}
+          child {node {1}
+              child {node {$a$}
+                  child {node {$\{[h_2]\}$}}}
+              %child {node {$b$}
+              %   child {node {$\{ \}$}}}
+                  };
+        \node[xshift = 240, yshift = 0] {$M_y$}
+          child {node {1}
+          %    child {node {$a$}
+          %        child {node {$\{ \}$}}}
+              child {node {$b$}
+                  child {node {$\{[h_2]\}$}}}
+          };
+      \end{tikzpicture}
+    \end{minipage}
+  \end{subcaptiongroup}
+  \caption{Rule states encountered during Examples~1 and~2}
+\end{figure}
 
 Now we add $h₂ : 300 ≤ 301$, which again unifies with both slots.
 For slot 1, $\sub₁(h₂)(y) = 301$, so we add the match $[h₂]$ to $M_{y}(1, 301)$.
@@ -457,129 +575,14 @@ We then check for hypotheses in slot 2 that also instantiate $y$ with $301$, and
 Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : 300 ≤ 302$ to be added later.
 
 For slot 2, we add $h₂$ to $H_{y}(2, 300)$.
-There are no compatible matches at level 1, so we are done with $h₂$, yielding the following final rule state.
-\begin{center}
-    \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-      \node[xshift = 0] {$H_y$}
-        child {node {2}
-          child {node {$301$}
-            child {node {$\{h₁\}$}}}
-          child {node {$300$}
-            child {node {$\{h₂\}$}}}
-        };
-      \node[xshift=160] {$M_y$}
-        child {node {1}
-          child[xshift=-20] {node {$302$}
-            child {node {$\{[h₁]\}$}}}
-          child[xshift=20] {node {$301$}
-            child {node {$\{[h₂]\}$}}}
-        };
-    \end{tikzpicture}
-    \end{center}
+There are no compatible matches at level 1, so we are done with $h₂$, yielding the final rule state in Fig.~\ref{fig:example1:state2}.
 
 \paragraph{Example 2.}
 We now consider a rule $r₂ : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
-We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $r₂$, starting with $h₁$:
-% NOTE : remove comments to get full trees.
-\begin{center}
-  \begin{tikzpicture}[level distance=12mm, scale=0.50]
-    \node[xshift = 30] {$H_x$}
-        %child[xshift = -20] {node {1}
-        %  child {node {$a$}
-        %    child {node {$\{ \}$}}}
-        %  child {node {$b$}
-        %    child {node {$\{ \}$}}}}
-        child {node {2}
-        child {node {$a$}
-            child {node {$\{h_1\}$}}}
-        % child {node {$b$}
-        %    child {node {$\{ \}$}}}
-        };
-    \node[xshift = 110] {$H_y$}
-        %child[xshift = -20] {node {1}
-        %    child {node {$a$}
-        %        child {node {$\{ \}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}}
-        child {node {2}
-            child {node {$a$}
-                child {node {$\{h_1\}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}
-        };
-    \node[xshift = 190] {$M_x$};
-        %child[xshift = -20] {node {1}
-        %    child {node {$a$}
-        %        child {node {$\{ \}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}}
-        %child[xshift = 20] {node {2}
-        %    child {node {$a$}
-        %        child {node {$\{\}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}
-        %};
-    \node[xshift = 270] {$M_y$};
-        %child[xshift = -20] {node {1}
-        %    child {node {$a$}
-        %        child {node {$\{ \}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}}
-        %child[xshift = 20] {node {2}
-        %    child {node {$a$}
-        %        child {node {$\{\}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}
-        %};
-  \end{tikzpicture}
-\end{center}
-At this point there are no matches, so there is nothing to extend.
-We now add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that is added to $M$:
+We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $r₂$, starting with $h₁$, which is added to $H$ with slot 2.
+There are no matches yet, so there is nothing to extend.
+We then add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that is added to $M$, yielding the rule state in Fig.~\ref{fig:example2:state1}.
 % NOTE : uncomment to get full trees.
-\begin{center}
-  \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-    \node[xshift = 0] {$H_x$}
-        child {node {2}
-            child {node {$a$}
-                child {node {$\{h_1\}$}}}
-            %child {node {$b$}
-            %    child {node {$\{ \}$}}}
-            };
-    \node[xshift = 80] {$H_y$}
-        child {node {2}
-            child {node {$a$}
-                child {node {$\{h_1\}$}}}
-            %child {node {$b$}
-            %    child {node {$\{ \}$}}}
-                };
-    \node[xshift = 160, yshift = 0] {$M_x$}
-        child {node {1}
-            child {node {$a$}
-                child {node {$\{[h_2]\}$}}}
-            %child {node {$b$}
-            %   child {node {$\{ \}$}}}
-                };
-        %child[xshift = 20] {node {2}
-        %    child {node {$a$}
-        %        child {node {$\{\}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}
-        %};
-    \node[xshift = 240, yshift = 0] {$M_y$}
-        child {node {1}
-        %    child {node {$a$}
-        %        child {node {$\{ \}$}}}
-            child {node {$b$}
-                child {node {$\{[h_2]\}$}}}
-        };
-        %child[xshift = 20] {node {2}
-        %    child {node {$a$}
-        %        child {node {$\{\}$}}}
-        %    child {node {$b$}
-        %        child {node {$\{ \}$}}}
-        %};
-  \end{tikzpicture}
-\end{center}
 To find hypotheses compatible with $m$, we consider the set of variables $\vars(\lvl(m) + 1)$.
 These are the variables shared between slot $\lvl(m) + 1 = 2$ and all previous slots, i.e.\ $x$ and $y$.
 Hence the compatible hypotheses are
@@ -587,43 +590,13 @@ Hence the compatible hypotheses are
   \bigcap_{x \in \vars(\lvl(m) + 1)} H_{x}(i + 1, \sub(m)(x)) = H_{x}(2, a) \cap H_{y}(2, b) = \emptyset
 \]
 This means the match cannot currently be extended.
-We now turn to the remaining hypothesis $h_3 : B~a~b$, adding it first to $H$:
-\begin{center}
-  \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
-    \node[xshift = 0] {$H_x$}
-      child {node {2}
-          child {node {$a$}
-              child {node {$\{h_1, h_3\}$}}}
-          %child {node {$b$}
-          %    child {node {$\{ \}$}}}
-          };
-    \node[xshift = 80] {$H_y$}
-      child {node {2}
-          child {node {$a$}
-              child {node {$\{h_1\}$}}}
-          child {node {$b$}
-              child {node {$\{h_3\}$}}}};
-    \node[xshift = 160, yshift = 0] {$M_x$}
-      child {node {1}
-          child {node {$a$}
-              child {node {$\{[h_2]\}$}}}
-          %child {node {$b$}
-          %   child {node {$\{ \}$}}}
-              };
-    \node[xshift = 240, yshift = 0] {$M_y$}
-      child {node {1}
-      %    child {node {$a$}
-      %        child {node {$\{ \}$}}}
-          child {node {$b$}
-              child {node {$\{[h_2]\}$}}}
-      };
-  \end{tikzpicture}
-\end{center}
+We now turn to the remaining hypothesis $h_3 : B~a~b$, adding it first to $H$.
+This yields the rule state in Fig.~\ref{fig:example2:state2}.
 Since $h₃$ matches slot $i = 2$, the matches that can be extended by $h₃$ are
 \[
   \bigcap_{x \in \vars(i)} M_{x}(i - 1, \sub_{i}(x)) = M_{x}(1, a) \cap M_{y}(1, b) = \{[h₂]\}
 \]
-We have found the complete match $[h₂, h₃]$ and can add a new hypothesis of type $C~a~b$.
+This produces the complete match $[h₂, h₃]$, so we can add a new hypothesis of type $C~a~b$.
 
 \section{Implementation}%
 \label{sec:implementation}
