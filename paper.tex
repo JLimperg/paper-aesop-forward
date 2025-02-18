@@ -242,6 +242,7 @@ This will prevent us from constructing $r~a~b$ in two different but ultimately r
 The term orders used in various saturation calculi serve a similar function.
 
 \section{Naive Forward Reasoning}
+\label{sec:naive}
 
 \jcom{Formulate this in terms of matches.}
 Prior to this work, Aesop used what we call naive forward reasoning (TODO ref).
@@ -653,7 +654,7 @@ The results are an average of \textcolor{red}{N} (TODO) runs per benchmark.
 
 \paragraph{Transitivity.}
 Our first benchmark is a scaled-up variant of the transitivity example from Sec.~\ref{sec:incremental}.
-Given some relation $≺$ on natural numbers, we register the lemma $\All{x~y}{x ≺ y → y ≺ z → x ≺ z}$ as the sole forward rule and set up a goal with hypotheses $h₁ : a ≺ a + 1, \dots, hₙ : a + n - 1 ≺ a + n$. The test is run for $a = 0$, represented with a square \protect\showpgfsquare\, and $a = 100$, represented with a circle \protect\showpgfcircle\.
+Given some relation $≺$ on natural numbers, we register the lemma $\All{x~y}{x ≺ y → y ≺ z → x ≺ z}$ as the sole forward rule and set up a goal with hypotheses $h₁ : a ≺ a + 1, \dots, hₙ : a + n - 1 ≺ a + n$. The test is run for $a = 0$, represented with a square \protect\showpgfsquare\, and $a = 100$, represented with a circle \protect\showpgfcircle\ .
 Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
 
 \begin{figure}
@@ -664,8 +665,8 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
       \begin{axis}[
         xlabel={Number of hypotheses},
         ylabel={Time in ms},
-        xmin=1, xmax=16,
-        ymin=4, ymax=2^15,
+        xmin=1, xmax=32,
+        ymin=4, ymax=2^16,
         %xtick={1,2,4,8,16},
         %ytick={2^3,2^5,2^7,2^9,2^11,2^13},
         xmode=log,
@@ -682,7 +683,7 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           mark=square,
           ]
           coordinates {
-            (1, 7.663472) (2, 9.354750) (4, 15.768194) (8, 104.921791) (16, 1882.683111) % (32, 1175.888750) 
+            (1, 7.663472) (2, 9.354750) (4, 15.768194) (8, 104.921791) (16, 1882.683111) (32, 45220.919667)  
           };
         \addlegendentry{naive}
         \addplot[
@@ -690,7 +691,7 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           mark=square,
           ]
           coordinates {
-            (1, 10.308541) (2, 10.704638) (4, 16.274305) (8, 38.800833) (16, 179.697681) % (32, 45220.919667) 
+            (1, 10.308541) (2, 10.704638) (4, 16.274305) (8, 38.800833) (16, 179.697681) (32, 1175.888750)
           };
         \addlegendentry{incremental}
         \addplot[
@@ -698,14 +699,14 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           mark=o,
           ]
           coordinates {
-            (1, 10.591138) (2, 23.881333) (4, 142.013389) (8, 1676.148375) (16, 24327.359417) %(32, 392049.849708) 
+            (1, 10.591138) (2, 23.881333) (4, 142.013389) (8, 1676.148375) (16, 24327.359417) (32, 392049.849708) 
           };
         \addplot[
           color=blue,
           mark=o,
           ]
           coordinates {
-            (1, 13.974694) (2, 26.216833) (4, 68.953444) (8, 245.601028) (16, 1028.670680) %(32, 4388.917500) 
+            (1, 13.974694) (2, 26.216833) (4, 68.953444) (8, 245.601028) (16, 1028.670680) (32, 4388.917500) 
           };
       \end{axis}
     \end{tikzpicture}
@@ -719,7 +720,7 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
         xlabel={Number of Rules},
         %ylabel={Time in ms},
         xmin=1, xmax=32,
-        ymin=4, ymax=2^15,
+        ymin=4, ymax=2^16,
         ymode=log,xmode=log,
         log basis x=2,
         log basis y=2,
@@ -771,13 +772,15 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
   \end{figure}
 
 We see in Fig.~\ref{fig:trans} that the incremental algorithm has a sizable advantage over the naive algorithm.
-An important detail is that the scales are logarithmic
+An important detail is that the scales are logarithmic; the dotted horizontal lines represent a relative $2^3 = 8$ fold increase.
+To highlight this, we consider the time taken for $2^5 = 32$ hypotheses and $a = 0$, these are the square marks on the rightmost entries: The incremental algorithm dominates the naive algorithm by a relative factor of more than 38.
+
 These results are unsurprising:
 The naive algorithm goes over the context, containing initially $n$ hypotheses, and compares all hypotheses pairwise.
 This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so the overall complexity is $O(n^4)$.
 The incremental algorithm considers each hypothesis only once.
-As the hypotheses get matched to both slots, it then compares each hypothesis with at most $n$ other hypotheses.
-This yields a complexity of $O(n^2)$.
+The hypotheses get matched to both slots and are then compared with at most $n$ other hypotheses.
+This yields an expected complexity of $O(n^2)$.
 
 Either algorithm generates all possible transitivity chains.
 If only the longest such chain, from $a$ to $a + n$, is needed, the transitivity rule can be registered as a \emph{destruct} rule, a special sort of forward rule that, whenever it is applied to certain hypotheses, removes the hypotheses from the context.
@@ -785,25 +788,53 @@ This reduces the complexity of the incremental algorithm to $O(n)$.
 
 \paragraph{Independent Rules.}
 In the last example, part of the stateful algorithm's success stems from the fact that it could reuse a lot of its previous work.
-An obvious question is then how well does the stateful algorithm behave when there is no work to be reused.
+An obvious question is then how well does the stateful algorithm behave when there is les work to be reused.
 
 Given a set of predicates $\mathcal{P} := \{P_{i,j} (x) | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i}(x) | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : \forall x, P_{i,1}(x)\to \dots P_{i,6}(x) \to Q_i(x)$.
 The procedures are then run on a context containing exactly $\mathcal{P}$.
-In this case, we sketch the behaviour of the stateless algorithm:
-It pick a first hypothesis, $h_{i,j} : P_{i,j}(a)$.
-If $j < 6$, the index returns nothing and it selects another hypothesis.
-For $h_{i,6} : P_{i,6}(a)$, the rule $r_i$ is selected, and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
-This gives a complexity of about $O(n^2)$.
+Here, as the rules are independent, the interference between them is minimal and there is less work to be reused.
 
-For the stateful algorithm, the hypotheses are considered one by one and match directly to the rule and the slot.
-The expected complexity is then linear in the number of rules.
+This doesn't mean, however, that no work is reused: A successful rule application creates a subgoal with the newly added fact.
+This means that the naive algorithm treats this subgoal as a completely new goal whereas the incremental algorithm can reuse all the work already done on the other hypotheses.
+A similar analysis to the one done in the first benchmark suggests a cubic complexity in the number of rules for the naive algorithm against a linear one for the incremental algorithm.
+The advantage is clearly seen in Fig.~\ref{fig:indep}.
+%In this case, we sketch the behaviour of the stateless algorithm:
+%It pick a first hypothesis, $h_{i,j} : P_{i,j}(a)$.
+%If $j < 6$, the index returns nothing and it selects another hypothesis.
+%For $h_{i,6} : P_{i,6}(a)$, the rule $r_i$ is selected, and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
+%This gives a complexity of about $O(n^2)$.
+
+%For the stateful algorithm, the hypotheses are considered one by one and match directly to the rule and the slot.
+%The expected complexity is then linear in the number of rules.
 
 \paragraph{Rules of Varying Depth.}
-In Fig.~\ref{fig:erase}, the step is set up as follows: given some rule $r$ with $6$ \xcom{motivate 6} premises, we run the procedure in a context with 5 of the 6 premises present.
-The numbers on the $x$ axis represent which hypothesis is missing in the order of consideration by the algorithm.
-In a sense, this is how \textit{deep} the algorithm investigate before it stops.
-At $0$, the rule are not selected by the index so the procedure stops.
-The stateless algorithm gets progressively slower the further the removed premises is located.
+As a last test case, we consider a scenario for which the naive algorithm should have a clear advantage over the incremental algorithm.
+The main idea is the following: The naive algorithm sometimes does a better job at recognising that a rule is unprovable.
+For example, when the context contains all but the last premise of a rule; the naive algorithm's index doesn't even select the rule. (See Sec. \ref{sec:naive} for the complete description of the naive algorithm.)
+This leads to a much faster treatment of this rule than the incremental algorithm that will still process the hypotheses in the context that match the other premises.
+
+Inspired by this, we find it interesting to consider a closely related test: A context with all the necessary hypotheses matching the premises however with one of them being incompatible with the others.
+The reason why we introduce an incomptatible hypothesis, instead of having one absent hypothesis in the context, is because even thought the naive algorithm is sure to be fast, the incremental algorithm also handles this specific situations well.
+See \textbf{Lazy Insertion} in Sec. \ref{sec:implementation}.
+
+With all of this in mind, in Fig.~\ref{fig:erase}, the test is set up as follows: given some rule $r$ with $n$ premises $P_i(x)$, $1 \leq i \leq n$, we run the procedure in a context where $n-1$ premises are instanciated with $a$ and one of them with $a + 1$.
+The numbers on the $x$ axis represent which hypothesis has the incompatible instantiation in the order of consideration by the algorithm.
+In a sense, this is how \textit{deep} the naive algorithm investigate before it stops.
+The reason we see similar times for the naive algorithm at $1$ and $2$ is because for $1$, it tries to build the theorem using $P_n(a + 1)$ and immediately fails because $P_{n - 1}(a)$ is incompatible.
+For $2$, the same thing happens but the instantiations are swapped.
+For the next depths, the stateless algorithm gets progressively slower the further the incompatible hypothesis is located.
+The position of the incompatible hypothesis has little effect on the stateful algorithm as the index selects the rule in all case.
+The work the stateful algorithm has to do is thus close to constant in this scenario.
+The Figure \ref{fig:erase-noprecomp} showcases that the naive algorithm has a sizable advantage in this test, especially when unification is difficult.
+
+\paragraph{Precompilation.}
+
+Some of the modules implemented in Lean can be precompiled.
+This makes a lot of sense for our approach since it is inevitably more complex that the naive approach.
+It thus benefits from getting precompiled.
+This translate into even more substantial gains in the first two tests and in the third test, the incremental algorithm again takes the advantage over the naive algorithm. See \ref{fig:erase-precomp}.
+%Precompilation is by default turned off for Mathlib4 as it amplifies its already long compilation time.
+%Users working on projects that uses a lot of forward reasoning can however chose to pay this compilation time price once and then benefit from fast forward reasoning.
 
 \begin{figure}
   \centering
@@ -917,9 +948,6 @@ The stateless algorithm gets progressively slower the further the removed premis
   \caption{The above results depict the behavior of both algorithms in depending on the \text{depth} of potential partial matches. The lines with square entry points represent problems where unification is easy. The lines with circle entry points are the same tests with hard unification problems.}%
   \label{fig:erase}
   \end{figure}
-
-The position of the missing premise has little effect on the stateful algorithm as the index selects the rule in all case; it only needs one of the premise to be present.
-The work the stateful algorithm has to do is thus close to constant in this scenario.
 
 \section{Related Work}
 
