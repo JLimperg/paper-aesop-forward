@@ -15,7 +15,7 @@
 \usepackage{mathtools}
 \usepackage{graphicx}
 \usepackage{pgfplots}
-\usepackage{hyperref}
+\usepackage[colorlinks]{hyperref}
 \usepackage{csquotes}
 \usepackage[noend]{algorithm2e}
 \usepackage{siunitx}
@@ -27,10 +27,13 @@
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
 \def\orcid#1{{\href{http://orcid.org/#1}{\protect\raisebox{-1.25pt}{\protect\includegraphics{orcid.pdf}}}}}
+
+\pgfplotsset{compat=1.18, width=8cm}
 \def\showpgfcircle{\tikz[baseline=-0.7ex]\node[mark size=0.7ex]
 {\pgfuseplotmark{o}};}
 \def\showpgfsquare{\tikz[baseline=-0.7ex]\node[mark size=0.7ex]
 {\pgfuseplotmark{square}};}
+
 \SetKw{KwIn}{in}
 \SetKw{KwLet}{let}
 \SetKw{KwYield}{yield}
@@ -243,7 +246,7 @@ Hence for a rule $r : A → B → C → D$, the partial applications $r~a$ and $
 This will prevent us from constructing $r~a~b$ in two different but ultimately redundant ways.
 The term orders used in various saturation calculi serve a similar function.
 
-\section{Naive Forward Reasoning}
+\section{Naive Forward Reasoning}%
 \label{sec:naive}
 
 \jcom{Formulate this in terms of matches.}
@@ -430,7 +433,7 @@ For slot 1, unification yields the substitution $\{x ↦ b, y ↦ c\}$.
 Since this is the first slot, Algorithm~\ref{alg:addmatch} inserts the new partial match $[h₁]$ into the set $M_{y}(1, c)$.
 This match cannot be extended since the hypothesis index $H$ does not contain a hypothesis for slot 2.
 
-For slot 2, unification yields the substitution $σ ≔ \{y ↦ b, z ↦ c\}$, so we insert $h₁$ into $H_{y}(2, b)$.
+For slot~2, unification yields the substitution $σ ≔ \{y ↦ b, z ↦ c\}$, so we insert $h₁$ into $H_{y}(2, b)$.
 No matches at level~1 can be extended by $h₁$ since
 \[
   \bigcap_{x \in \vars(2)} M_{x}(1, σ(x)) = M_{y}(1, b) = \emptyset
@@ -539,7 +542,6 @@ Now we add $h₂ : a ≤ b$, which again unifies with both slots.
 For slot~1, $\sub₁(h₂)(y) = b$, so we add the match $[h₂]$ to $M_{y}(1, b)$.
 We then check for hypotheses in slot~2 that also instantiate $y$ with $b$, and indeed we find $M_{y}(2, b) = \{h₁\}$.
 Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : a ≤ c$ to be added later.
-
 For slot~2, we add $h₂$ to $H_{y}(2, a)$.
 There are no compatible matches at level~1 so we are done with $h₂$, yielding the final rule state in Fig.~\ref{fig:example1:state2}.
 
@@ -646,7 +648,7 @@ We then run the \texttt{saturate} tactic, which uses either naive or incremental
 Performing only forward reasoning is the best-case scenario for the incremental algorithm since previous results can be fully reused.
 When forward reasoning is combined with other rules, we would expect smaller gains, depending on how much reuse the non-forward rules allow.
 
-In what follows, instead of the natural number type of Lean's standard library, which has special support in the compiler and kernel, we use a custom type of Peano naturals.
+Instead of the natural number type of Lean's standard library, which has special support in the compiler and kernel, we use a custom type of Peano naturals for the benchmarks.
 Unifying two concrete Peano natural numbers $n$ and $m$ involves comparing $\min(n, m)$ constructors.
 We can therefore use moderately large numbers to simulate the bigger unification problems that Aesop encounters, for example, in Mathlib's category theory development.
 
@@ -654,14 +656,14 @@ Benchmark code and data are available in our supplement~\cite{supplement}.
 The results shown below were obtained on a MacBook Pro with an Apple~M2 Pro processor and \SI{32}{GB} of RAM.
 The results are an average of \textcolor{red}{N} (TODO) runs per benchmark.
 
-\paragraph{Transitivity.}
+\paragraph{Transitivity Benchmark.}
 Our first benchmark is a scaled-up variant of the transitivity example from Sec.~\ref{sec:incremental}.
-Given some relation $≺$ on natural numbers, we register the lemma $\All{x~y}{x ≺ y → y ≺ z → x ≺ z}$ as the sole forward rule and set up a goal with hypotheses $h₁ : a ≺ a + 1, \dots, hₙ : a + n - 1 ≺ a + n$. The test is run for $a = 0$, represented with a square \protect\showpgfsquare\, and $a = 100$, represented with a circle \protect\showpgfcircle\ .
+Given some relation $≺$ on natural numbers, we register the lemma $\All{x~y}{x ≺ y → y ≺ z → x ≺ z}$ as the sole forward rule and set up a goal with hypotheses $h₁ : a ≺ a + 1, \dots, hₙ : a + n - 1 ≺ a + n$, where either $a = 0$ (yielding easy unification problems) or $a = 100$.
 Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
 
 \begin{figure}
   \centering
-  \begin{subfigure}{.5\textwidth}
+  \begin{subfigure}[b]{.5\textwidth}
     \centering
     \begin{tikzpicture}[scale=0.75]
       \begin{axis}[
@@ -678,11 +680,13 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
         legend pos=north west,
         ymajorgrids=true,
         grid style=dashed,
-        legend image post style={mark=},
+        legend image post style={mark=}
         ]
         \addplot[
           color=orange,
           mark=square,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
             (1, 7.663472) (2, 9.354750) (4, 15.768194) (8, 104.921791) (16, 1882.683111) (32, 45220.919667)  
@@ -699,6 +703,8 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
         \addplot[
           color=orange,
           mark=o,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
             (1, 10.591138) (2, 23.881333) (4, 142.013389) (8, 1676.148375) (16, 24327.359417) (32, 392049.849708) 
@@ -715,11 +721,11 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
     \caption{Transitivity benchmark}%
     \label{fig:trans}
   \end{subfigure}%
-  \begin{subfigure}{.5\textwidth}
+  \begin{subfigure}[b]{.5\textwidth}
     \centering
     \begin{tikzpicture}[scale=0.75]
       \begin{axis}[
-        xlabel={Number of Rules},
+        xlabel={Number of rules},
         %ylabel={Time in ms},
         xmin=1, xmax=32,
         ymin=4, ymax=2^16,
@@ -731,15 +737,15 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
         grid style=dashed,
         legend image post style={mark=},
         ]
-
         \addplot[
           color=orange,
           mark=square,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
             (1, 10.399958) (2, 16.426541) (4, 43.461403) (8, 205.595541) (16, 1238.090889) (32, 8927.857819)
           };
-        \addlegendentry{naive}
         \addplot[
           color=blue,
           mark=square,
@@ -747,10 +753,11 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           coordinates {
             (1, 11.231875) (2, 12.879500) (4, 16.851930) (8, 24.666485) (16, 42.054055) (32, 76.369778)
           };
-        \addlegendentry{incremental}
         \addplot[
           color=orange,
           mark=o,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
             (1, 19.405222) (2, 33.487472) (4, 80.107597) (8, 284.954791) (16, 1536.089624) (32, 10721.729861)
@@ -764,85 +771,46 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           };
       \end{axis}
     \end{tikzpicture}
-    % graph \includegraphics[width=.4\linewidth]{image1}
     \caption{Independence benchmark}%
     \label{fig:indep}
   \end{subfigure}
-  \caption{The above results depict the behavior of both algorithms in a context where a lot of work can be reused (Transitivity) and in another where no work can be reused (Independence). 
-  In both benchmarks, results denoted with a square \protect\showpgfsquare\ come from a context where the argument of the predicates is small ($a = 0$), leading to easy unification problems; results denoted with a circle \protect\showpgfcircle\ come from a context where the unification problem is hard ($a = 100$).}%
+  \caption{Results of the transitivity (\subref{fig:trans}) and independence (\subref{fig:indep}) benchmarks for $a = 0$ (\protect\showpgfsquare) and $a = 100$ (\protect\showpgfcircle).}%
   \label{fig:benchmark}
   \end{figure}
 
-We see in Fig.~\ref{fig:trans} that the incremental algorithm has a sizable advantage over the naive algorithm.
-An important detail is that the scales are logarithmic; the dotted horizontal lines represent a relative $2^3 = 8$ fold increase.
-To highlight this, we consider the time taken for $2^5 = 32$ hypotheses and $a = 0$, these are the square marks on the rightmost entries: The incremental algorithm dominates the naive algorithm by a relative factor of more than 38.
+Fig.~\ref{fig:trans} shows that the incremental algorithm has a sizeable advantage over the naive algorithm.
+The scales are logarithmic, with each dotted horizontal line representing an 8-fold increase.
+Hence, for $2^{5} = 32$ hypotheses and $a = 0$, incremental forward reasoning is over 38 times faster than naive forward reasoning.
+The difference for $a = 100$ is even larger.
 
-These results are unsurprising:
+These results are unsurprising, given the complexity of both algorithms on this benchmark.
 The naive algorithm goes over the context, containing initially $n$ hypotheses, and compares all hypotheses pairwise.
 This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so the overall complexity is $O(n^4)$.
-The incremental algorithm considers each hypothesis only once.
-The hypotheses get matched to both slots and are then compared with at most $n$ other hypotheses.
-This yields an expected complexity of $O(n^2)$.
+By contrast, the incremental algorithm considers each hypothesis only once, matching it against both slots and then comparing it with at most $n$ other hypotheses, so the complexity is $O(n^{2})$.
 
-Either algorithm generates all possible transitivity chains.
-If only the longest such chain, from $a$ to $a + n$, is needed, the transitivity rule can be registered as a \emph{destruct} rule, a special sort of forward rule that, whenever it is applied to certain hypotheses, removes the hypotheses from the context.
+Both algorithms generate all possible transitivity chains.
+If only the longest such chain, from $a$ to $a + n$, is desired, the transitivity rule can be registered as a \emph{destruct} rule, a special sort of forward rule that removes from the context any hypotheses it is applied to.
 This reduces the complexity of the incremental algorithm to $O(n)$.
 
-\paragraph{Independent Rules.}
-In the last example, part of the stateful algorithm's success stems from the fact that it could reuse a lot of its previous work.
-An obvious question is then how well does the stateful algorithm behave when there is les work to be reused.
+\paragraph{Independence Benchmark.}
+In the last example, the incremental algorithm performs well partly because it can reuse much of its work.
+We now consider a test with almost no potential for reuse.
 
-Given a set of predicates $\mathcal{P} := \{P_{i,j} (x) | 1 \leq i \leq n \text{ and } 1 \leq j \leq 6\}$ and $\mathcal{Q} :=\{Q_{i}(x) | 1 \leq i \leq n \}$, in this test, we consider the $n$ following rules $r_i : \forall x, P_{i,1}(x)\to \dots P_{i,6}(x) \to Q_i(x)$.
-The procedures are then run on a context containing exactly $\mathcal{P}$.
-Here, as the rules are independent, the interference between them is minimal and there is less work to be reused.
+Given $n ≥ 1$, we use $n$ forward rules of the form $\All{x}{P_{1}~x → \dots → P_{6}~x}$, where $P_{1}, \dots, P_{6}$ are arbitrary predicates that are distinct from each other and from the predicates of all other rules.
+The initial goal contains one hypothesis of type $P_{i}~a$ for each predicate $P_{i}$ that appears in a rule, where $a$ is again either 0 or 100.
+Hence, each rule can be applied exactly once and each hypothesis matches exactly one slot.
 
-This doesn't mean, however, that no work is reused: A successful rule application creates a subgoal with the newly added fact.
-This means that the naive algorithm treats this subgoal as a completely new goal whereas the incremental algorithm can reuse all the work already done on the other hypotheses.
-A similar analysis to the one done in the first benchmark suggests a cubic complexity in the number of rules for the naive algorithm against a linear one for the incremental algorithm.
-The advantage is clearly seen in Fig.~\ref{fig:indep}.
-%In this case, we sketch the behaviour of the stateless algorithm:
-%It pick a first hypothesis, $h_{i,j} : P_{i,j}(a)$.
-%If $j < 6$, the index returns nothing and it selects another hypothesis.
-%For $h_{i,6} : P_{i,6}(a)$, the rule $r_i$ is selected, and it then needs to try and fill its remaining five slot with the context's $6n$ hypotheses which it tries all.
-%This gives a complexity of about $O(n^2)$.
-
-%For the stateful algorithm, the hypotheses are considered one by one and match directly to the rule and the slot.
-%The expected complexity is then linear in the number of rules.
-
-\paragraph{Rules of Varying Depth.}
-As a last test case, we consider a scenario for which the naive algorithm should have a clear advantage over the incremental algorithm.
-The main idea is the following: The naive algorithm sometimes does a better job at recognising that a rule is unprovable.
-For example, when the context contains all but the last premise of a rule; the naive algorithm's index doesn't even select the rule. (See Sec. \ref{sec:naive} for the complete description of the naive algorithm.)
-This leads to a much faster treatment of this rule than the incremental algorithm that will still process the hypotheses in the context that match the other premises.
-
-Inspired by this, we find it interesting to consider a closely related test: A context with all the necessary hypotheses matching the premises however with one of them being incompatible with the others.
-The reason why we introduce an incomptatible hypothesis, instead of having one absent hypothesis in the context, is because even thought the naive algorithm is sure to be fast, the incremental algorithm also handles this specific situations well.
-See \textbf{Lazy Insertion} in Sec. \ref{sec:implementation}.
-
-With all of this in mind, in Fig.~\ref{fig:erase}, the test is set up as follows: given some rule $r$ with $n$ premises $P_i(x)$, $1 \leq i \leq n$, we run the procedure in a context where $n-1$ premises are instanciated with $a$ and one of them with $a + 1$.
-The numbers on the $x$ axis represent which hypothesis has the incompatible instantiation in the order of consideration by the algorithm.
-In a sense, this is how \textit{deep} the naive algorithm investigate before it stops.
-The position of the incompatible hypothesis has little effect on the stateful algorithm as the index selects the rule in all case.
-The work the stateful algorithm has to do is thus close to constant in this scenario.
-The Figure \ref{fig:erase-noprecomp} showcases that the naive algorithm has a sizable advantage in this test, especially when unification is difficult.
-
-\paragraph{Precompilation.}
-
-Some of the modules implemented in Lean can be precompiled.
-This makes a lot of sense for our approach since it is inevitably more complex that the naive approach.
-It thus benefits from getting precompiled.
-This translate into even more substantial gains in the first two tests and in the third test, the incremental algorithm again takes the advantage over the naive algorithm. See \ref{fig:erase-precomp}.
-%Precompilation is by default turned off for Mathlib4 as it amplifies its already long compilation time.
-%Users working on projects that uses a lot of forward reasoning can however chose to pay this compilation time price once and then benefit from fast forward reasoning.
+Still, Fig.~\ref{fig:indep} shows that the incremental approach outperforms the naive one for $n ≥ 4$.
+The is because the naive algorithm fails to take much advantage of the rules' independence:
+whenever a hypothesis is added (and thus a new subgoal generated), it re-runs all the rules it had already run on the previous subgoal, realising only after the fact that the rules were already applied.
+This yields a complexity of $O(n^{3})$ for the naive algorithm versus $O(n)$ for the incremental algorithm.
 
 \begin{figure}
-  Depth Test
   \centering
   \begin{subfigure}{.5\textwidth}
     \centering
     \begin{tikzpicture}[scale=0.75]
       \begin{axis}[
-        %title={Depth Test},
         xlabel={Depth},
         ylabel={Time in ms},
         xmin=1, xmax=5,
@@ -850,53 +818,51 @@ This translate into even more substantial gains in the first two tests and in th
         xtick={1,2,3,4,5},
         ymode=log,
         log basis y=2,
-        legend pos=north west,
         ymajorgrids=true,
-        grid style=dashed,
-        legend image post style={mark=},
+        grid style=dashed
         ]
         \addplot[
           color=orange,
           mark=square,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
             (1, 35.466292) (2, 40.918638) (3, 46.936125) (4, 54.933124) (5, 61.269861)
           };
-        \addlegendentry{naive}
         \addplot[
           color=blue,
           mark=square,
           ]
           coordinates {
-            (1, 135.967736) (2, 127.324444) (3, 136.891250) (4, 118.720444) (5, 116.293222) 
+            (1, 135.967736) (2, 127.324444) (3, 136.891250) (4, 118.720444) (5, 116.293222)
           };
-        \addlegendentry{incremental}
         \addplot[
           color=orange,
           mark=o,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
-            (1, 107.978069) (2, 115.900527) (3, 122.454958) (4, 137.732764) (5, 144.037681) 
+            (1, 107.978069) (2, 115.900527) (3, 122.454958) (4, 137.732764) (5, 144.037681)
           };
         \addplot[
           color=blue,
           mark=o,
           ]
           coordinates {
-            (1, 619.932611) (2, 601.456805) (3, 600.926110) (4, 589.144389) (5, 595.091180) 
+            (1, 619.932611) (2, 601.456805) (3, 600.926110) (4, 589.144389) (5, 595.091180)
           };
       \end{axis}
     \end{tikzpicture}
-    \caption{Depth benchmark no-precompilation}%
+    \caption{Without precompilation}%
     \label{fig:erase-noprecomp}
   \end{subfigure}%
   \begin{subfigure}{.5\textwidth}
     \centering
     \begin{tikzpicture}[scale=0.75]
       \begin{axis}[
-        %title={Depth Test},
         xlabel={Depth},
-        %ylabel={Time in ms},
         xmin=1, xmax=5,
         ymin=8, ymax=1024,
         xtick={1,2,3,4,5},
@@ -911,9 +877,11 @@ This translate into even more substantial gains in the first two tests and in th
         \addplot[
           color=orange,
           mark=square,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
-            (1, 13.728805) (2, 17.909194) (3, 23.324666) (4, 28.030819) (5, 33.279611) 
+            (1, 13.728805) (2, 17.909194) (3, 23.324666) (4, 28.030819) (5, 33.279611)
           };
         \addlegendentry{naive}
         \addplot[
@@ -927,9 +895,11 @@ This translate into even more substantial gains in the first two tests and in th
         \addplot[
           color=orange,
           mark=o,
+          style=densely dashed,
+          mark options={style={solid}}
           ]
           coordinates {
-            (1, 81.546486) (2, 85.345444) (3, 90.532347) (4, 98.247764) (5, 105.423875) 
+            (1, 81.546486) (2, 85.345444) (3, 90.532347) (4, 98.247764) (5, 105.423875)
           };
         \addplot[
           color=blue,
@@ -940,13 +910,30 @@ This translate into even more substantial gains in the first two tests and in th
           };
       \end{axis}
     \end{tikzpicture}
-    % graph \includegraphics[width=.4\linewidth]{image1}
-    \caption{Depth benchmark with precompilation}%
+    \caption{With precompilation}%
     \label{fig:erase-precomp}
   \end{subfigure}
-  \caption{The above results depict the behavior of both algorithms in depending on the \text{depth} of potential partial matches. The lines with square entry points represent problems where unification is easy. The lines with circle entry points are the same tests with hard unification problems.}%
+  \caption{Results of the depth benchmark with precompilation disabled (\subref{fig:erase-noprecomp}) or enabled (\subref{fig:erase-precomp}) and with $a = 0$ (\protect\showpgfsquare) or $a = 100$ (\protect\showpgfcircle).}%
   \label{fig:erase}
-  \end{figure}
+\end{figure}
+
+\paragraph{Depth Benchmark.}
+Our final benchmark concerns situations where a rule matches almost, but not quite.
+We use a single rule $r : \All{x}{P_{1}~x → \dots → P_{n}~x → A}$, where the predicates $P_{i}$ are all distinct and $A$ is an arbitrary proposition.
+\jcom{What is $n$?}
+Given a \emph{depth} $k ≤ n$, the initial goal contains hypotheses of types $P_{i}~a$ for $1 ≤ i ≤ n$ and $i ≠ n - k$ as well as one hypothesis $P_{n-k}~(a + 1)$ (with $a = 0$ or $a = 100$ as before).
+In other words, the hypotheses match all premises with compatible substitutions, except the $k$-th premise from the back.
+Since the naive algorithm processes the premises back-to-front, $k$ corresponds to the number of premises that it matches before it becomes clear that the rule cannot be applied.
+
+This setup is challenging for the incremental approach because (a) no rule is ever applied, so incrementality does not help; and (b) the incremental algorithm expends a non-negligible amount of effort for each of the $n$ hypothesis, whereas the naive algorithm can, at least for small $k$, decide fairly quickly that the rule is not applicable.
+And indeed, Fig.~\ref{fig:erase-noprecomp} shows that the naive approach scales with $k$ while the incremental one does not, but the constant factors are so high that the incremental approach remains slower for $k$ up to 5.
+
+Fig.~\ref{fig:erase-precomp}, however, shows a different picture, with the incremental approach leading in most cases.
+The figure shows the results of running the same depth benchmark with \emph{precompilation} enabled.
+This is a feature of Lean that compiles tactics ahead of time (whereas they are normally interpreted).
+Our technique appears to benefit from this much more than the naive approach, perhaps because the RPINF calculation incurs a large interpretation overhead.
+%Precompilation is by default turned off for Mathlib4 as it amplifies its already long compilation time.
+%Users working on projects that uses a lot of forward reasoning can however chose to pay this compilation time price once and then benefit from fast forward reasoning.
 
 \section{Related Work}
 
