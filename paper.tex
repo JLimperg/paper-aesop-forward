@@ -930,15 +930,16 @@ ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be
 Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
 Some other white-box tactics, e.g.\ Rocq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.
 
-\paragraph{Mixed-Mode Reasoning.}
-Some knowledge-based reasoning systems, e.g.\ Algernon (TODO ref) and EYE (TODO ref), support combined forward and backward (\enquote*{mixed-mode}) reasoning.
-However, to our knowledge, rules in these systems cannot change the assumptions available to forward rules, so they do not require incrementality.
-Nevertheless, our technique bears some resemblance to the RETE algorithm (TODO ref) for forward reasoning in large knowledge bases.
+\paragraph{SATCHMO.}
+The SATCHMO first-order theorem prover (TODO ref) uses a search procedure that treats a given set of implications as forward rules and uses a single non-forward rule to perform case analysis on disjunctive hypotheses.
+SATCHMO-style provers may benefit from our incremental approach if the set of implications is large.
+However, since unification is comparatively cheap in first-order logic, it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the forward state.
+SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, providing a different form of incrementality.
 
-The Prolog-based first-order theorem prover SATCHMO (TODO ref) and its many descendants also use mixed-mode reasoning.
-SATCHMO's search procedure can be viewed as a special case of our technique: a given set of implications are used as forward rules and a single non-forward rule performs case analysis on disjunctive hypotheses.
-A SATCHMO-style prover may benefit from our incremental approach if the set of implications is large, though in a setting where unification is cheap it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the forward state.
-SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, which provides a form of incrementality.
+\paragraph{Knowledge-Based Systems.}
+Some knowledge-based reasoning systems, e.g.\ Algernon (TODO ref) and EYE (TODO ref), support combined forward and backward reasoning.
+However, to our knowledge, no such system allows non-forward rules to change the assumptions available to forward rules, so they do not require incrementality.
+Nevertheless, our technique bears some resemblance to the RETE algorithm (TODO ref) for forward reasoning in large knowledge bases.
 
 \jcom{auto2?}
 
