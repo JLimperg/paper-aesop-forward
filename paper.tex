@@ -22,6 +22,8 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
+\bibliographystyle{splncs04}
+
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 \urlstyle{rm}
 \def\orcid#1{{\href{http://orcid.org/#1}{\protect\raisebox{-1.25pt}{\protect\includegraphics{orcid.pdf}}}}}
@@ -152,7 +154,7 @@
 
 \section{Introduction}
 
-In many proof assistants, simple \enquote*{white-box} automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's (TODO ref) and Rocq's (TODO ref) auto, ACL2's (TODO ref) waterfall, various PVS (TODO ref) tactics, Lean's (TODO ref) Aesop (TODO ref), etc.
+In many proof assistants, simple \enquote*{white-box} automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's~\cite{Isabelle} and Rocq's~\cite{Coq} auto~\cite{IsabelleAuto}, ACL2's \enquote{waterfall}~\cite{ACL2}, various PVS~\cite{PVS,PVS-tutorial} tactics, Lean's~\cite{Lean4} Aesop~\cite{Aesop}, etc.
 These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
 Faced with an initial goal, the tactics try various user-specified \emph{rules}, which correspond to admissible inferences in the prover's logic.
 A successful rule reduces the current goal to zero or more subgoals, which are solved recursively until either a full proof is found or no rule applies to any open goal or the search times out.
@@ -165,10 +167,10 @@ These rule tactics can output arbitrary subgoals, subject only to the condition 
 ACL2, PVS and Aesop provide special support for \emph{forward rules}.
 Given, for example, the transitivity lemma $\All{x~y~z}{x < y → y < z → x < z}$, a forward rule run on the goal $h₁ : a < b,\, h₂ : b < c ⊢ A$ produces the single subgoal $h₁ : a < b,\, h₂ : b < c,\, h₃ : a < c ⊢ A$.
 Hence forward rules can be used to establish additional facts that may be relevant for other rules.
-For example, the Aeneas project (TODO ref) uses Aesop's forward rules \jcom{ensure that this is accurate} in its proof automation to establish facts that are later used by an arithmetic decision procedure.
+For example, the Aeneas project~\cite{Aeneas} uses Aesop's forward rules \jcom{ensure that this is accurate} in its proof automation to establish facts that are later used by an arithmetic decision procedure.
 
 However, Aesop's support for forward rules was, until recently, quite basic.
-In particular, each forward rule was tried on each goal separately (subject to pre-filtering by a discrimination tree (TODO ref) index).
+In particular, each forward rule was tried on each goal separately (subject to pre-filtering by a discrimination tree~\cite{DiscriminationTrees} index).
 This is wasteful since in practice, many rules produce subgoals with a similar---or even the same---context as the initial goal.
 For example, the ∧-introduction rule affects only the goal's target, not its context.
 Still, all forward rules applied to the initial $Γ ⊢ A ∧ B$ would be tried again on the subgoals $Γ ⊢ A$ and $Γ ⊢ B$, with predictably little effect.
@@ -192,7 +194,7 @@ In addition to this \emph{incrementality}, the forward state satisfies two other
 \end{itemize}
 
 Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation on some (though not all) synthetic benchmarks.
-The implementation, benchmarks and evaluation data are available in a supplement to this paper (TODO ref).
+The implementation, benchmarks and evaluation data are available in a supplement to this paper~\cite{supplement}.
 Mainline Aesop already uses the new implementation by default (TODO true?).
 
 \section{Preliminaries}
@@ -245,9 +247,9 @@ The term orders used in various saturation calculi serve a similar function.
 \label{sec:naive}
 
 \jcom{Formulate this in terms of matches.}
-Prior to this work, Aesop used what we call naive forward reasoning (TODO ref).
+Prior to this work, Aesop used what we call naive forward reasoning~\cite{Aesop}.
 This approach treats forward rules essentially like any other Aesop rule.
-When Aesop selects a forward rule $r : \All{(x₁ : A₁) \dots (xₘ : Aₘ)}{B}$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we first unify the last premise $Aₘ$ with each hypothesis $h : C$ such that $C$ and $Aₘ$ likely unify (as determined by a discrimination tree (TODO ref) index).
+When Aesop selects a forward rule $r : \All{(x₁ : A₁) \dots (xₘ : Aₘ)}{B}$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we first unify the last premise $Aₘ$ with each hypothesis $h : C$ such that $C$ and $Aₘ$ likely unify (as determined by a discrimination tree index).
 If successful, this results in a substitution $σ₁$ containing $xₘ$ and any variables occurring in $Aₘ$.
 We then unify $A_{m-1}[σ₁]$ with the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{m-2}[σ₂]$, etc., until we obtain a complete match for $r$ (skipping premises $A_{m-i}$ if they are already determined by $σᵢ$).
 If a premise $A_{m-i}[σᵢ]$ does not unify with any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
@@ -255,7 +257,7 @@ These may lead to a different substitution $τ$ and therefore to matching hypoth
 If this process yields at least one full application $r~a₁ \dots aₘ$, we can add a new hypothesis of type $T = B[x₁ ↦ a₁, \dots, xₘ ↦ aₘ]$, meaning we generate the subgoal $Γ, h : T$ (unless $Γ$ already contains a hypothesis of type $T$).
 
 This approach is efficient when the last premise of a rule is not present in the context since the rule is then excluded by indexing and never run.
-If the last premise is present, however, we perform a large number of unifications between premises and hypotheses (though some of these could perhaps be avoided heuristically (TODO ref fast subsumption)).
+If the last premise is present, however, we perform a large number of unifications between premises and hypotheses (though some of these could perhaps be avoided heuristically~\cite{TammetSubsumption}).
 Furthermore, the whole process is repeated when we proceed to another goal with a similar context.
 In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited by the naive algorithm.
 
@@ -309,7 +311,7 @@ Extending the matches above was possible only because all hypotheses are compati
 In general, to extend a match $m$ with a hypothesis $h : T$ at slot $i$, we need to ensure that the substitution of $m$, $\sub(m)$, is compatible with the substitution of $h$, $\sub_{i}(h)$.
 
 The rule state therefore uses two \emph{variable indices} $H$ and $M$ to index hypotheses and matches by their instantiations for shared variables, allowing us to quickly determine compatible pairs of matches and hypotheses.
-We could use a substitution tree (TODO ref, confirm) for this, but our custom data structure is simpler and perhaps more efficient.
+We could use a substitution tree~\cite{SubstitutionTrees}, but our custom data structure is simpler and perhaps more efficient.
 The \emph{hypothesis index} $H$ maps each triple $(x, i, t)$ (where $i > 1$ is a slot, $x ∈ \vars(i)$ a variable and $t$ a term) to the set of hypotheses $h$ added to the rule state such that $h$ matches $i$ and $\sub_{i}(h)(x) = t$.
 In other words, $H$ indexes the known hypotheses by the slots they match and the instantiations of shared variables.
 Note that hypotheses matching slot $1$ are not stored since they can never extend a match.
@@ -407,8 +409,8 @@ Suppose we are adding the hypothesis $h₂ : Q~b$, having already added the hypo
 The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M_{x}(i-1, σ(x)) = ∅$, but the match $[h₁]$ can be extended with $h₂$.
 In fact, any match at level~1 can be extended with any hypothesis matching slot~2 since the two slots are independent.
 
-To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, using a construction from (TODO ref Aesop Sec. 4.2).
-These subsets, called \emph{variable clusters}, share no variables with each other, so each can be treated as a separate rule with its own rule state.
+To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, called \emph{variable clusters}, using the same construction as Aesop's \emph{metavariable clusters}~\cite{Aesop}.
+The variable clusters share no variables with each other, so each can be treated as a separate rule with its own rule state.
 Finding a complete match for a rule amounts to finding one complete match for each of its clusters.
 The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
 
@@ -580,7 +582,7 @@ Lean has multiple transparency levels that determine which constants are unfolde
 However, this limits the power of forward reasoning since fewer terms can be unified.
 
 We also need to account for higher-order unification problems: $Q~\mvar{f}$, where $Q$ is a predicate over functions and $\mvar{f}$ is a function variable, should unify with $Q~(\Lam{x}{x})$.
-Since higher-order unification is undecidable and does not admit most general unifiers (TODO ref), we instead use a unification algorithm provided by Lean that is complete for first-order unification problems and heuristically solves some higher-order problems as well.
+Since higher-order unification is undecidable~\cite{ThirdOrderUnificationUndecidableLucchesi,ThirdOrderUnificationUndecidableHuet,SecondOrderUnificationUndecidable}, we instead use a unification algorithm provided by Lean that is complete for first-order unification problems and heuristically solves some higher-order problems as well.
 This makes our technique incomplete in the sense that some theorem instantiations will be missed, but since the same unification algorithm is used throughout Lean, users are well acquainted with this form of incompleteness.
 
 During unification, we treat metavariables in hypotheses as constants, i.e.\ we never assign them.
@@ -607,7 +609,7 @@ Since this is an entirely syntactic notion of equality, it can be checked quickl
 This allows us to use a hash map for the instantiations while still comparing them up to definitional equality.
 
 We believe that this scheme is more efficient than alternative schemes relying on repeated unification.
-For example, we could use Lean's implementation of imperfect discrimination trees (TODO ref), which implement a map from expressions to arbitrary data where lookup respects definitional equality.
+For example, we could use Lean's implementation of imperfect discrimination trees, which implement a map from expressions to arbitrary data where lookup respects definitional equality.
 However, since these discrimination trees are imperfect, they may return spurious lookup results, so whether a lookup result is valid must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
 We believe that repeatedly performing such unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
@@ -635,8 +637,8 @@ We modified the naive forward reasoning implementation to use the same mechanism
 \section{Evaluation}%
 \label{sec:evaluation}
 
-There are unfortunately no standard benchmarks for Aesop-like tactics, and since Aesop is not expected to solve most goals without an extensive, manually curated set of rules, benchmarks for push-button theorem provers such as TPTP (TODO ref) are not very meaningful.
-Additionally, forward rules are currently little used by Aesop's main client, the Mathlib mathematics library (TODO ref).
+There are unfortunately no standard benchmarks for Aesop-like tactics, and since Aesop is not expected to solve most goals without an extensive, manually curated set of rules, benchmarks for push-button theorem provers such as TPTP~\cite{TPTP} are not very meaningful.
+Additionally, forward rules are currently little used by Aesop's main client, the Mathlib mathematics library~\cite{Mathlib}.
 We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that demonstrate the performance characteristics of incremental forward reasoning.
 
 For each benchmark, we set up certain forward rules and a goal with handpicked hypotheses.
@@ -648,7 +650,7 @@ In what follows, instead of the natural number type of Lean's standard library, 
 Unifying two concrete Peano natural numbers $n$ and $m$ involves comparing $\min(n, m)$ constructors.
 We can therefore use moderately large numbers to simulate the bigger unification problems that Aesop encounters, for example, in Mathlib's category theory development.
 
-Benchmark code and data are available in our supplement (TODO ref).
+Benchmark code and data are available in our supplement~\cite{supplement}.
 The results shown below were obtained on a MacBook Pro with an Apple~M2 Pro processor and \SI{32}{GB} of RAM.
 The results are an average of \textcolor{red}{N} (TODO) runs per benchmark.
 
@@ -947,22 +949,22 @@ This translate into even more substantial gains in the first two tests and in th
 \section{Related Work}
 
 \paragraph{ACL2 and PVS.}
-Among white-box proof automation tactics, to our knowledge only ACL2's \enquote{waterfall} (TODO ref) and PVS's various proof search strategies (TODO ref) have special support for forward reasoning.
+Among white-box proof automation tactics, to our knowledge only ACL2's \enquote{waterfall}~\cite{ACL2} and PVS's various proof search strategies~\cite{ACL2,PVS} have special support for forward reasoning.
 Both use essentially Aesop's naive algorithm, i.e.\ the context of each goal is saturated independently without reusing partial results from other goals.
 ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be selected based on the presence of a particular term anywhere in the goal, rather than based on particular hypotheses.
 Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
 Some other white-box tactics, e.g.\ Rocq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.
 
 \paragraph{SATCHMO.}
-The SATCHMO first-order theorem prover (TODO ref) uses a search procedure that treats a given set of implications as forward rules and uses a single non-forward rule to perform case analysis on disjunctive hypotheses.
+The SATCHMO first-order theorem prover~\cite{SATCHMO} uses a search procedure that treats a given set of implications as forward rules and uses a single non-forward rule to perform case analysis on disjunctive hypotheses.
 SATCHMO-style provers may benefit from our incremental approach if the set of implications is large.
 However, since unification is comparatively cheap in first-order logic, it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the forward state.
 SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, providing a different form of incrementality.
 
 \paragraph{Knowledge-Based Systems.}
-Some knowledge-based reasoning systems, e.g.\ Algernon (TODO ref) and EYE (TODO ref), support combined forward and backward reasoning.
+Some knowledge-based reasoning systems, e.g.\ Algernon~\cite{Algernon} and EYE~\cite{EYE}, support combined forward and backward reasoning.
 However, to our knowledge, no such system allows non-forward rules to change the assumptions available to forward rules, so they do not require incrementality.
-Nevertheless, our technique bears some resemblance to the RETE algorithm (TODO ref) for forward reasoning in large knowledge bases.
+Nevertheless, our technique bears some resemblance to the RETE algorithm~\cite{RETE} for forward reasoning in large knowledge bases.
 
 \jcom{auto2?}
 
@@ -972,5 +974,7 @@ We have presented a technique that integrates forward reasoning into a tree-base
 We avoid redundant reasoning steps by caching partial forward rule applications in a data structure, the \emph{forward match state}, that enables efficient updates.
 The technique is independent of the search strategy and logic used.
 Our evaluation shows substantial speedups on some synthetic benchmarks, relative to Aesop's previous implementation.
+
+\bibliography{lit}
 
 \end{document}
