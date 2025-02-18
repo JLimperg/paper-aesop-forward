@@ -820,10 +820,6 @@ See \textbf{Lazy Insertion} in Sec. \ref{sec:implementation}.
 With all of this in mind, in Fig.~\ref{fig:erase}, the test is set up as follows: given some rule $r$ with $n$ premises $P_i(x)$, $1 \leq i \leq n$, we run the procedure in a context where $n-1$ premises are instanciated with $a$ and one of them with $a + 1$.
 The numbers on the $x$ axis represent which hypothesis has the incompatible instantiation in the order of consideration by the algorithm.
 In a sense, this is how \textit{deep} the naive algorithm investigate before it stops.
-\xcom{I would remove either 1 or 2 from the graph (they have the same depth and then remove this explanation. I can then either modify the test accordingly or just move the explanation to the test.)}
-The reason we see similar times for the naive algorithm at $1$ and $2$ is because for $1$, it tries to build the theorem using $P_n(a + 1)$ and immediately fails because $P_{n - 1}(a)$ is incompatible.
-For $2$, the same thing happens but the instantiations are swapped.
-For the next depths, the stateless algorithm gets progressively slower the further the incompatible hypothesis is located.
 The position of the incompatible hypothesis has little effect on the stateful algorithm as the index selects the rule in all case.
 The work the stateful algorithm has to do is thus close to constant in this scenario.
 The Figure \ref{fig:erase-noprecomp} showcases that the naive algorithm has a sizable advantage in this test, especially when unification is difficult.
@@ -846,10 +842,9 @@ This translate into even more substantial gains in the first two tests and in th
         title={Depth Test},
         xlabel={Depth},
         ylabel={Time in ms},
-        xmin=1, xmax=6,
-        ymin=0, ymax=2^10,
-        xtick={1,2,3,4,5,6},
-        ytick={4,16,64,256,1024},
+        xmin=1, xmax=5,
+        ymin=8, ymax=2^10,
+        xtick={1,2,3,4,5},
         ymode=log,
         log basis y=2,
         legend pos=north west,
@@ -862,7 +857,7 @@ This translate into even more substantial gains in the first two tests and in th
           mark=square,
           ]
           coordinates {
-            (1, 32.580083) (2, 33.212805) (3, 40.239833) (4, 47.670277) (5, 54.647458) (6, 61.044958) 
+            (1, 35.466292) (2, 40.918638) (3, 46.936125) (4, 54.933124) (5, 61.269861)
           };
         \addlegendentry{naive}
         \addplot[
@@ -870,7 +865,7 @@ This translate into even more substantial gains in the first two tests and in th
           mark=square,
           ]
           coordinates {
-            (1, 127.925541) (2, 140.497597) (3, 123.719264) (4, 130.819361) (5, 121.047667) (6, 123.789500)
+            (1, 135.967736) (2, 127.324444) (3, 136.891250) (4, 118.720444) (5, 116.293222) 
           };
         \addlegendentry{incremental}
         \addplot[
@@ -878,14 +873,14 @@ This translate into even more substantial gains in the first two tests and in th
           mark=o,
           ]
           coordinates {
-            (1, 108.120444) (2, 107.352694) (3, 116.182833) (4, 125.995639) (5, 137.815527) (6, 142.310597) 
+            (1, 107.978069) (2, 115.900527) (3, 122.454958) (4, 137.732764) (5, 144.037681) 
           };
         \addplot[
           color=blue,
           mark=o,
           ]
           coordinates {
-            (1, 604.595791) (2, 624.541194) (3, 608.671111) (4, 614.285014) (5, 588.636819) (6, 595.276806) 
+            (1, 619.932611) (2, 601.456805) (3, 600.926110) (4, 589.144389) (5, 595.091180) 
           };
       \end{axis}
     \end{tikzpicture}
@@ -899,10 +894,9 @@ This translate into even more substantial gains in the first two tests and in th
         title={Depth Test},
         xlabel={Depth},
         %ylabel={Time in ms},
-        xmin=1, xmax=6,
-        ymin=0, ymax=170,
-        xtick={1,2,3,4,5,6},
-        ytick={2^1,2^3,2^5,2^7},
+        xmin=1, xmax=5,
+        ymin=8, ymax=1024,
+        xtick={1,2,3,4,5},
         ymode=log,
         log basis y=2,
         legend pos=north west,
@@ -915,7 +909,7 @@ This translate into even more substantial gains in the first two tests and in th
           mark=square,
           ]
           coordinates {
-            (1, 12.820514) (2, 12.645666) (3, 17.582138) (4, 22.730528) (5, 27.280097) (6, 32.578722) 
+            (1, 13.728805) (2, 17.909194) (3, 23.324666) (4, 28.030819) (5, 33.279611) 
           };
         \addlegendentry{naive}
         \addplot[
@@ -923,7 +917,7 @@ This translate into even more substantial gains in the first two tests and in th
           mark=square,
           ]
           coordinates {
-            (1, 13.406416) (2, 13.747139) (3, 12.503764) (4, 12.950486) (5, 12.282083) (6, 12.151930) 
+            (1, 13.841305) (2, 12.801791) (3, 13.358389) (4, 13.200611) (5, 13.251902)
           };
         \addlegendentry{incremental}
         \addplot[
@@ -931,14 +925,14 @@ This translate into even more substantial gains in the first two tests and in th
           mark=o,
           ]
           coordinates {
-            (1, 83.032819) (2, 79.396889) (3, 85.939180) (4, 92.495542) (5, 96.461291) (6, 105.517458)
+            (1, 81.546486) (2, 85.345444) (3, 90.532347) (4, 98.247764) (5, 105.423875) 
           };
         \addplot[
           color=blue,
           mark=o,
           ]
           coordinates {
-            (1, 25.681583) (2, 25.322444) (3, 27.672833) (4, 26.999055) (5, 25.690319) (6, 25.257291)
+            (1, 25.539097) (2, 24.432485) (3, 25.629666) (4, 23.935250) (5, 23.911139)
           };
       \end{axis}
     \end{tikzpicture}
