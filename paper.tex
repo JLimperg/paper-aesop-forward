@@ -212,7 +212,7 @@ If a variable occurs in at least two premises, like $y$ above, it is \emph{share
 
 For a lemma with $n$ input premises, we assign to each input premise a unique number between $1$ and $n$.
 This is the premise's \emph{slot}, which we often identify with the premise itself.
-For now, we assume that the input premises are numbered consecutively, so in the above example slot 1 has type $x < y$ and slot 2 has type $y < z$.
+For now, we assume that the input premises are numbered consecutively, so in the above example slot~1 has type $x < y$ and slot~2 has type $y < z$.
 The \emph{shared variables of slot $i$}, $\vars(i)$ are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
 
 If $h : A$ is a hypothesis in the context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
@@ -400,11 +400,11 @@ Any extended matches thus produced are added to the rule state recursively.
 
 \paragraph{Variable Clusters.}
 We have so far assumed that for each slot $i > 1$, the set of shared variables $\vars(i)$ is nonempty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
-This assumption is violated for rules such as $\All{x~y}{P~x → Q~y → R~x~y}$: slot 2 ($Q~y$) shares no variables with slot 1 ($P~x$).
+This assumption is violated for rules such as $\All{x~y}{P~x → Q~y → R~x~y}$: slot~2 ($Q~y$) shares no variables with slot~1 ($P~x$).
 As a result, our above algorithms fail.
 Suppose we are adding the hypothesis $h₂ : Q~b$, having already added the hypothesis $h₁ : P~a$ and hence the partial match $[h₁]$.
 The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M_{x}(i-1, σ(x)) = ∅$, but the match $[h₁]$ can be extended with $h₂$.
-In fact, any match at level 1 can be extended with any hypothesis matching slot 2 since the two slots are independent.
+In fact, any match at level~1 can be extended with any hypothesis matching slot~2 since the two slots are independent.
 
 To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, using a construction from (TODO ref Aesop Sec. 4.2).
 These subsets, called \emph{variable clusters}, share no variables with each other, so each can be treated as a separate rule with its own rule state.
@@ -419,18 +419,18 @@ When $h$ is deleted, we can then efficiently determine the relevant rule states 
 
 \paragraph{Example 1.}
 As a first example, consider a rule state for the transitivity rule $r₁ : \All{x~y~z}{x ≤ y → y ≤ z → x ≤ z}$ to which we add, in order, the hypotheses
-$h₁ : 301 ≤ 302$ and $h₂ : 300 ≤ 301$.
+$h₁ : b ≤ c$ and $h₂ : a ≤ b$.
 The rule has two slots of types $x ≤ y$ and $y ≤ z$ which share the variable $y$.
 
-The hypothesis $h₁ : 301 ≤ 302$ unifies with both slots, so we run Algorithm~\ref{alg:addhyp} twice.
-For slot 1, unification yields the substitution $\{x ↦ 301, y ↦ 302\}$.
-Since this is the first slot, we start a new partial match $[h₁]$, which Algorithm~\ref{alg:addmatch} inserts into the set $M_{y}(1, 302)$.
+The hypothesis $h₁ : b ≤ c$ unifies with both slots, so we run Algorithm~\ref{alg:addhyp} twice.
+For slot 1, unification yields the substitution $\{x ↦ b, y ↦ c\}$.
+Since this is the first slot, Algorithm~\ref{alg:addmatch} inserts the new partial match $[h₁]$ into the set $M_{y}(1, c)$.
 This match cannot be extended since the hypothesis index $H$ does not contain a hypothesis for slot 2.
 
-For slot 2, unification yields the substitution $σ ≔ \{y ↦ 301, z ↦ 302\}$, so we insert $h₁$ into $H_{y}(2, 301)$.
-No matches at level 1 can be extended by $h₁$ since
+For slot 2, unification yields the substitution $σ ≔ \{y ↦ b, z ↦ c\}$, so we insert $h₁$ into $H_{y}(2, b)$.
+No matches at level~1 can be extended by $h₁$ since
 \[
-  \bigcap_{x \in \vars(2)} M_{x}(1, σ(x)) = M_{y}(1, 301) = \emptyset
+  \bigcap_{x \in \vars(2)} M_{x}(1, σ(x)) = M_{y}(1, b) = \emptyset
 \]
 At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:state1}.
 
@@ -444,11 +444,11 @@ At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:stat
           \node at (-2,0) {\captiontext*{}\label{fig:example1:state1}};
           \node {$H_{y}\colon$};
           \node at (1.5,0) {2}
-            child {node {$301$}
+            child {node {$b$}
               child {node {$\{h₁\}$}}};
           \node at (5, 0) {$M_y\colon$};
           \node at (6.5, 0) {1}
-            child {node {$302$}
+            child {node {$c$}
               child {node {$\{[h₁]\}$}}};
         \end{tikzpicture}
       \end{minipage}
@@ -460,15 +460,15 @@ At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:stat
           \node at (-2,0) {\captiontext*{}\label{fig:example1:state2}};
           \node {$H_y\colon$};
           \node at (1.5, 0) {2}
-            child {node[xshift=-2] {$301$}
+            child {node[xshift=-2] {$b$}
               child {node {$\{h₁\}$}}}
-            child {node[xshift=2] {$300$}
+            child {node[xshift=2] {$a$}
               child {node {$\{h₂\}$}}};
           \node at (5, 0) {$M_y\colon$};
           \node at (6.5, 0) {1}
-            child {node[xshift=-2] {$302$}
+            child {node[xshift=-2] {$c$}
               child {node {$\{[h₁]\}$}}}
-            child {node[xshift=2] {$301$}
+            child {node[xshift=2] {$b$}
               child {node {$\{[h₂]\}$}}};
         \end{tikzpicture}
       \end{minipage}
@@ -503,7 +503,7 @@ At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:stat
   \begin{subcaptiongroup}
     \subcaptionlistentry{}
     \begin{minipage}{\textwidth}
-      \begin{tikzpicture}[outer sep=auto, level distance=12mm, scale=0.50]
+      \begin{tikzpicture}[outer sep=auto, level distance=4em, scale=0.50]
         \node at (-2,0) {\captiontext*{}\label{fig:example2:state2}};
         \node {$H_{x}\colon$};
         \node at (1.5, 0) {2}
@@ -532,22 +532,22 @@ At this point, $H$ and $M$ are in the state shown in Fig.~\ref{fig:example1:stat
   }
 \end{figure}
 
-Now we add $h₂ : 300 ≤ 301$, which again unifies with both slots.
-For slot 1, $\sub₁(h₂)(y) = 301$, so we add the match $[h₂]$ to $M_{y}(1, 301)$.
-We then check for hypotheses in slot 2 that also instantiate $y$ with $301$, and indeed we find $M_{y}(2, 301) = \{h₁\}$.
-Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : 300 ≤ 302$ to be added later.
+Now we add $h₂ : a ≤ b$, which again unifies with both slots.
+For slot~1, $\sub₁(h₂)(y) = b$, so we add the match $[h₂]$ to $M_{y}(1, b)$.
+We then check for hypotheses in slot~2 that also instantiate $y$ with $b$, and indeed we find $M_{y}(2, b) = \{h₁\}$.
+Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : a ≤ c$ to be added later.
 
-For slot 2, we add $h₂$ to $H_{y}(2, 300)$.
-There are no compatible matches at level 1, so we are done with $h₂$, yielding the final rule state in Fig.~\ref{fig:example1:state2}.
+For slot~2, we add $h₂$ to $H_{y}(2, a)$.
+There are no compatible matches at level~1 so we are done with $h₂$, yielding the final rule state in Fig.~\ref{fig:example1:state2}.
 
 \paragraph{Example 2.}
 We now consider a rule $r₂ : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
-We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $r₂$, starting with $h₁$, which is added to $H$ with slot 2.
+We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $r₂$, starting with $h₁$, which is added to $H$ with slot~2.
 There are no matches yet, so there is nothing to extend.
 We then add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that is added to $M$, yielding the rule state in Fig.~\ref{fig:example2:state1}.
 % NOTE : uncomment to get full trees.
 To find hypotheses compatible with $m$, we consider the set of variables $\vars(\lvl(m) + 1)$.
-These are the variables shared between slot $\lvl(m) + 1 = 2$ and all previous slots, i.e.\ $x$ and $y$.
+These are the variables shared between slot~$\lvl(m) + 1 = 2$ and all previous slots, i.e.\ $x$ and $y$.
 Hence the compatible hypotheses are
 \[
   \bigcap_{x \in \vars(\lvl(m) + 1)} H_{x}(i + 1, \sub(m)(x)) = H_{x}(2, a) \cap H_{y}(2, b) = \emptyset
@@ -636,7 +636,7 @@ We modified the naive forward reasoning implementation to use the same mechanism
 
 There are unfortunately no standard benchmarks for Aesop-like tactics, and since Aesop is not expected to solve most goals without an extensive, manually curated set of rules, benchmarks for push-button theorem provers such as TPTP (TODO ref) are not very meaningful.
 Additionally, forward rules are currently little used by Aesop's main client, the Mathlib mathematics library (TODO ref).
-We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that showcase the performance characteristics of incremental forward reasoning.
+We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that demonstrate the performance characteristics of incremental forward reasoning.
 
 For each benchmark, we set up certain forward rules and a goal with handpicked hypotheses.
 We then run the \texttt{saturate} tactic, which uses either naive or incremental forward reasoning to exhaustively apply the forward rules.
