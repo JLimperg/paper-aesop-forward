@@ -836,12 +836,13 @@ This translate into even more substantial gains in the first two tests and in th
 %Users working on projects that uses a lot of forward reasoning can however chose to pay this compilation time price once and then benefit from fast forward reasoning.
 
 \begin{figure}
+  Depth Test
   \centering
   \begin{subfigure}{.5\textwidth}
     \centering
     \begin{tikzpicture}[scale=0.75]
       \begin{axis}[
-        title={Depth Test},
+        %title={Depth Test},
         xlabel={Depth},
         ylabel={Time in ms},
         xmin=1, xmax=5,
@@ -893,7 +894,7 @@ This translate into even more substantial gains in the first two tests and in th
     \centering
     \begin{tikzpicture}[scale=0.75]
       \begin{axis}[
-        title={Depth Test},
+        %title={Depth Test},
         xlabel={Depth},
         %ylabel={Time in ms},
         xmin=1, xmax=5,
@@ -901,6 +902,7 @@ This translate into even more substantial gains in the first two tests and in th
         xtick={1,2,3,4,5},
         ymode=log,
         log basis y=2,
+        yticklabels={},
         legend pos=north west,
         ymajorgrids=true,
         grid style=dashed,
