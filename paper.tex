@@ -820,6 +820,7 @@ See \textbf{Lazy Insertion} in Sec. \ref{sec:implementation}.
 With all of this in mind, in Fig.~\ref{fig:erase}, the test is set up as follows: given some rule $r$ with $n$ premises $P_i(x)$, $1 \leq i \leq n$, we run the procedure in a context where $n-1$ premises are instanciated with $a$ and one of them with $a + 1$.
 The numbers on the $x$ axis represent which hypothesis has the incompatible instantiation in the order of consideration by the algorithm.
 In a sense, this is how \textit{deep} the naive algorithm investigate before it stops.
+\xcom{I would remove either 1 or 2 from the graph (they have the same depth and then remove this explanation. I can then either modify the test accordingly or just move the explanation to the test.)}
 The reason we see similar times for the naive algorithm at $1$ and $2$ is because for $1$, it tries to build the theorem using $P_n(a + 1)$ and immediately fails because $P_{n - 1}(a)$ is incompatible.
 For $2$, the same thing happens but the instantiations are swapped.
 For the next depths, the stateless algorithm gets progressively slower the further the incompatible hypothesis is located.
