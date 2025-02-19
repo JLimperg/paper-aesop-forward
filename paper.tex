@@ -167,7 +167,7 @@ In addition to such \emph{backwards rules}, most search tactics can also use arb
 For example, Aesop uses the cases tactic on disjunctive hypotheses, splitting goals of the form $Γ,\, h : A ∨ B ⊢ C$ into subgoals $Γ,\, h : A ⊢ C$ and $Γ,\, h : B ⊢ C$.
 Tactics implement arbitrary inferences; in particular, they can remove any hypothesis and add any provable proposition as a new hypothesis.
 
-ACL2, PVS and Aesop provide special support for \emph{forward rules}.
+ACL2, PVS and Aesop additionally provide special support for \emph{forward reasoning}, also known as \emph{forward chaining}, in the form of \emph{forward rules}.
 Given, for example, the transitivity lemma $\All{x~y~z}{x < y → y < z → x < z}$, a forward rule run on the goal $h₁ : a < b,\, h₂ : b < c ⊢ A$ produces the single subgoal $h₁ : a < b,\, h₂ : b < c,\, h₃ : a < c ⊢ A$.
 Hence forward rules can be used to establish additional facts that may be relevant for other rules.
 For example, the Aeneas project~\cite{Aeneas} uses Aesop's forward rules \jcom{ensure that this is accurate} in its proof automation to establish facts that are later used by an arithmetic decision procedure.
