@@ -106,6 +106,7 @@
 \AfterEndEnvironment{leancode}{\end{tcolorbox}}
 \usemintedstyle{xcode}
 
+\newcommand{\para}[1]{\paragraph{\bfseries\upshape #1}}
 \newcommand{\xcom}[1]{{\textcolor{cyan}{Xavier: #1}} }
 \newcommand{\jcom}[1]{{\textcolor{orange}{Jannis: #1}} }
 
@@ -271,7 +272,7 @@ The main idea is to store, for each goal $Γ ⊢ A$, the partial matches implied
 This rests on the assumption that $Δ$ is likely similar to $Γ$ in practice, and that it is therefore cheaper to update the partial matches for $Γ$ than to compute those of $Δ$ from scratch.
 Our main contribution is a data structure, the \emph{forward state}, that allows us to perform these updates efficiently.
 
-\paragraph{Forward State.}
+\para{Forward States.}
 We associate to each goal in Aesop's search tree a forward state that reflects the goal's context.
 Let $\States$ be the set of forward states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
 The forward state's interface then consists of two functions
@@ -292,7 +293,7 @@ Afterwards, whenever an Aesop rule is run on a goal with context $Γ$, producing
 \end{enumerate}
 Changes to a hypothesis (e.g.\ a change of its type) are treated as a deletion followed by an addition.
 
-\paragraph{Rule State.}
+\para{Rule States.}
 Partial matches are specific to each rule, so the forward state naturally decomposes into a set of \emph{rule states}, one per rule.
 Given a goal $Γ ⊢ A$ and a rule $r$, the rule state for $r$ contains exactly the partial matches of $r$ in context $Γ$.
 A rule state supports $\addHyp$ and $\delHyp$ methods analogous to those on forward states.
@@ -308,7 +309,7 @@ Second, adding a match may trigger the insertion of further matches.
 Suppose that before adding $h₁$ and $h₂$, we had already added a hypothesis $h₀ : R~a$ to the rule state.
 Once the partial match $[h₁, h₂]$ arrives, we should recognise that it can be extended with $h₀$ to obtain the (complete) match $[h₁, h₂, h₀]$.
 
-\paragraph{Variable Indices.}
+\para{Variable Indices.}
 Extending the matches above was possible only because all hypotheses are compatible on the shared variable $x$, i.e.\ they all instantiate $x$ with the same term $a$.
 In general, to extend a match $m$ with a hypothesis $h : T$ at slot $i$, we need to ensure that the substitution of $m$, $\sub(m)$, is compatible with the substitution of $h$, $\sub_{i}(h)$.
 
@@ -402,7 +403,7 @@ If $m$ is already complete, it is returned.
 Otherwise $m$ is inserted into $M$ and we query $H$ for hypotheses that can extend $m$.
 Any extended matches thus produced are added to the rule state recursively.
 
-\paragraph{Variable Clusters.}
+\para{Variable Clusters.}
 We have so far assumed that for each slot $i > 1$, the set of shared variables $\vars(i)$ is nonempty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
 This assumption is violated for rules such as $\All{x~y}{P~x → Q~y → R~x~y}$: slot~2 ($Q~y$) shares no variables with slot~1 ($P~x$).
 As a result, our above algorithms fail.
@@ -415,13 +416,13 @@ The variable clusters share no variables with each other, so each can be treated
 Finding a complete match for a rule amounts to finding one complete match for each of its clusters.
 The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
 
-\paragraph{Deletion.}
+\para{Deletion.}
 When a hypothesis $h$ is removed from a goal's context, we must update the forward state accordingly.
 This means deleting $h$ from any rule state to which it was previously added, i.e.\ from any rule state for a rule $r$ with a slot $i$ matching $h$.
 To facilitate deletion, we cache this information when $h$ is added to the rule state.
 When $h$ is deleted, we can then efficiently determine the relevant rule states and delete $h$ from the hypothesis index $H$ at slot $i$ and from the match index $M$ at all slots $j ≥ i$.
 
-\paragraph{Example 1.}
+\para{Example 1.}
 As a first example, consider a rule state for the transitivity rule $r₁ : \All{x~y~z}{x ≤ y → y ≤ z → x ≤ z}$ to which we add, in order, the hypotheses
 $h₁ : b ≤ c$ and $h₂ : a ≤ b$.
 The rule has two slots of types $x ≤ y$ and $y ≤ z$ which share the variable $y$.
@@ -488,7 +489,7 @@ Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesi
 For slot~2, we add $h₂$ to $H_{y}(2, a)$.
 There are no compatible matches at level~1 so we are done with $h₂$, yielding the final rule state~\eqref{eq:example1:state2}.
 
-\paragraph{Example 2.}
+\para{Example 2.}
 We now consider a rule $r₂ : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
 We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $r₂$, starting with $h₁$, which is added to $H$ with slot~2.
 There are no matches yet, so there is nothing to extend.
@@ -574,7 +575,7 @@ This produces the complete match $[h₂, h₃]$, so we can add a new hypothesis 
 
 Implementing the preceding technique efficiently requires some care, particularly in the context of dependent type theory.
 
-\paragraph{Unification.}
+\para{Unification.}
 In Lean's type theory, types contain programs and unification is expected to respect definitional equality, i.e.\ equality up to evaluation.
 For instance, a theorem with premise $P~2$, where $P$ is some predicate, should apply to a hypothesis of type $P~((\Lam{x}{x})~2)$ since the two types are definitionally equal.
 As a result, unifying premises and hypotheses is arbitrarily expensive in theory and a major cost centre in practice.
@@ -589,7 +590,7 @@ Either of these limitations render forward reasoning incomplete, but since the s
 During unification, we treat metavariables in hypotheses as constants, i.e.\ we never assign them.
 This reflects the expected behaviour of forward rules: given a hypothesis $h : \mvar{x} < \mvar{y}$ and rule $1 < 0 → ⊥$, applying the rule to $h$ would replace $\mvar{x}$ with 1 and $\mvar{y}$ with 0 in all goals where $\mvar{x}$ and $\mvar{y}$ appear, even though this may render some goals unprovable.
 
-\paragraph{RPINF.}
+\para{RPINF.}
 Since the hypothesis index $H$ and the match index $M$ of a rule state have the same domain, we combine them into one map.
 This map, whose domain is a set of triples $(x, i, t)$, is represented by three nested persistent hash maps.
 
@@ -612,7 +613,7 @@ For example, we could use Lean's discrimination trees, which implement a map fro
 However, these discrimination trees are imperfect, so the validity of a lookup result must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
 We believe that performing these unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
-\paragraph{Match Equivalence.}
+\para{Match Equivalence.}
 Naively, two matches would be considered equal if they contain the same hypotheses (up to definitional equality, again implemented via RPINF).
 However, consider the rule $r : \All{x~y}{P~x~y → Q~x~z → R~x}$ and the hypotheses $h₁ : P~a~b$, $h₂ : P~a~c$, $h₃ : Q~a~d$ and $h₄ : Q~a~e$.
 The complete matches $m₁ ≔ [h₁, h₃]$ and $m₁' ≔ [h₁, h₄]$ contain different hypotheses, but the difference does not matter because the applications $r~h₁~h₃$ and $r~h₁~h₄$ both have type $R~a$.
@@ -621,12 +622,12 @@ Similarly, the partial matches $m₂ ≔ [h₁]$ and $m₂' ≔ [h₂]$ are redu
 Hence we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
 Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ with conclusion $A$ equal if $\lvl(m) = \lvl(m')$ and for each variable $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
 
-\paragraph{Redundant Hypotheses.}
+\para{Redundant Hypotheses.}
 When we find a complete match, we add a new hypothesis of the corresponding type $T$ to the goal, but only if there is no other hypothesis of type $T$ already present.
 To efficiently implement this check, we store in the forward match state a set containing the RPINFs of all hypotheses that have been added to (and not subsequently removed from) the state.
 We modified the naive forward reasoning implementation to use the same mechanism.
 
-\paragraph{Lazy Insertion.}
+\para{Lazy Insertion.}
 Adding a hypothesis to a rule state is cheap, but not free: it involves one unification for each slot that the hypothesis may match, according to a discrimination tree index, followed by several operations on the variable indices.
 We therefore delay insertions until the index has selected at least one hypothesis for each slot.
 This helps, for example, with the defining rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
@@ -651,7 +652,7 @@ We can therefore use moderately large numbers to simulate the bigger unification
 Benchmark code and data are available in our supplement~\cite{supplement}.
 The results shown below were obtained on a MacBook Pro with an Apple~M2 Pro processor and \SI{32}{GB} of RAM, averaging over \textcolor{red}{N} (TODO) runs per benchmark.
 
-\paragraph{Transitivity Benchmark.}
+\para{Transitivity Benchmark.}
 Our first benchmark is a scaled-up variant of the transitivity example from Sec.~\ref{sec:incremental}.
 Given some relation $≺$ on natural numbers, we register the lemma $\All{x~y}{x ≺ y → y ≺ z → x ≺ z}$ as the sole forward rule and set up a goal with hypotheses $h₁ : a ≺ a + 1, \dots, hₙ : a + n - 1 ≺ a + n$, where either $a = 0$ (yielding easy unification problems) or $a = 100$.
 Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
@@ -787,7 +788,7 @@ Both algorithms generate all possible transitivity chains.
 If only the longest such chain, from $a$ to $a + n$, is desired, the transitivity rule can be registered as a \emph{destruct} rule, a special sort of forward rule that removes from the context any hypotheses it is applied to.
 This reduces the complexity of the incremental algorithm to $O(n)$.
 
-\paragraph{Independence Benchmark.}
+\para{Independence Benchmark.}
 In the last example, the incremental algorithm performs well partly because each match at level~1 can be combined with many hypotheses at level~2 without processing the level~1 hypothesis repeatedly.
 We now consider a benchmark with many independent rules where this kind of reuse does not occur.
 
@@ -913,7 +914,7 @@ Accordingly, the naive algorithm has complexity $O(n^{3})$ on this benchmark, ve
   \label{fig:erase}
 \end{figure}
 
-\paragraph{Depth Benchmark.}
+\para{Depth Benchmark.}
 Our final benchmark concerns situations where many rules match almost, but not quite.
 We use 100 copies of a rule $r : \All{x}{P_{1}~x → \dots → P_{n}~x → A}$, where the predicates $P_{i}$ are all distinct and $A$ is an arbitrary proposition.
 Given a \emph{depth} $k ≤ n$, the initial goal contains hypotheses of types $P_{i}~a$ for each $i ≠ n - k$ with $1 ≤ i ≤ n$, as well as one hypothesis $P_{n-k}~(a + 1)$ (with $a = 0$ or $a = 100$).
@@ -932,7 +933,7 @@ Unfortunately, precompilation also substantially increases Aesop's build time an
 
 \section{Related Work}
 
-\paragraph{White-Box Tactics.}
+\para{White-Box Tactics.}
 Among white-box proof automation tactics, to our knowledge only ACL2's \enquote{waterfall}~\cite{ACL2} and PVS's various proof search strategies~\cite{PVS} have special support for forward reasoning.
 Both use essentially Aesop's naive algorithm, i.e.\ the context of each goal is saturated independently without reusing partial results from other goals.
 ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be selected based on the presence of a particular term anywhere in the goal, rather than based on particular hypotheses.
@@ -942,13 +943,13 @@ The auto2 tactic~\cite{auto2} employs an SMT-like search procedure based on forw
 As such, it does not require incrementality, but it could perhaps benefit from indexing along the lines of our variable indices.
 Many other white-box tactics can execute arbitrary tactics, including forward rules, but make no special provisions for them.
 
-\paragraph{SATCHMO.}
+\para{SATCHMO.}
 The SATCHMO first-order theorem prover~\cite{SATCHMO} uses a search procedure that treats a given set of implications as forward rules and uses a case-splitting rule to perform case analysis on disjunctive hypotheses.
 SATCHMO-style provers may benefit from our incremental approach if the set of implications is large.
 However, since unification is comparatively cheap in first-order logic, it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the forward state.
 SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, providing a different form of incrementality.
 
-\paragraph{Knowledge-Based Systems.}
+\para{Knowledge-Based Systems.}
 Some knowledge-based reasoning systems, e.g.\ Algernon~\cite{Algernon} and EYE~\cite{EYE}, support combined forward and backward reasoning.
 However, to our knowledge, no such system allows non-forward rules to change the assumptions available to forward rules, so they do not require incrementality.
 Nevertheless, our technique bears some resemblance to the RETE algorithm~\cite{RETE} for forward reasoning in large knowledge bases.
