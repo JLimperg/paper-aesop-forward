@@ -905,19 +905,18 @@ Accordingly, the naive algorithm has complexity $O(n^{3})$ on this benchmark, ve
     \caption{With precompilation}%
     \label{fig:erase-precomp}
   \end{subfigure}
-  \caption{Results of the depth benchmark with precompilation disabled (\subref{fig:erase-noprecomp}) or enabled (\subref{fig:erase-precomp}) and with $a = 0$ (\protect\showpgfsquare) or $a = 100$ (\protect\showpgfcircle).}%
+  \caption{Results of the depth benchmark for $n = 6$ with precompilation disabled (\subref{fig:erase-noprecomp}) or enabled (\subref{fig:erase-precomp}) and with $a = 0$ (\protect\showpgfsquare) or $a = 100$ (\protect\showpgfcircle).}%
   \label{fig:erase}
 \end{figure}
 
 \paragraph{Depth Benchmark.}
 Our final benchmark concerns situations where many rules match almost, but not quite.
 We use 100 copies of a rule $r : \All{x}{P_{1}~x → \dots → P_{n}~x → A}$, where the predicates $P_{i}$ are all distinct and $A$ is an arbitrary proposition.
-\jcom{What is $n$?}
 Given a \emph{depth} $k ≤ n$, the initial goal contains hypotheses of types $P_{i}~a$ for each $i ≠ n - k$ with $1 ≤ i ≤ n$, as well as one hypothesis $P_{n-k}~(a + 1)$ (with $a = 0$ or $a = 100$).
 In other words, the hypotheses match all premises with compatible substitutions, except the $k^{\text{th}}$ premise from the back.
 Since the naive algorithm processes the premises back-to-front, $k$ determines how many premises the algorithm matches before it notices that the rule cannot be applied.
 
-This setup is challenging for the incremental approach because (1) no rule is ever applied, so incrementality does not help; and (2) the incremental algorithm expends a non-negligible amount of effort for each of the $n$ hypotheses, whereas the naive algorithm can, at least for small $k$, decide fairly quickly that the rule is not applicable.
+This setup is challenging for the incremental algorithm because (1) no rule is ever applied, so incrementality does not help; and (2) the incremental algorithm expends a non-negligible amount of effort for each of the $n$ hypotheses, whereas the naive algorithm can, at least for small $k$, decide fairly quickly that the rule is not applicable.
 And indeed, Fig.~\ref{fig:erase-noprecomp} shows that while the naive approach slows down for greater $k$, big constant factors cause the incremental approach to remain slower for $k$ up to 5.
 
 Fig.~\ref{fig:erase-precomp}, however, shows a different picture, with the incremental approach leading for all $k > 1$.
