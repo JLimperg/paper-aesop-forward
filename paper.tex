@@ -624,7 +624,7 @@ Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ 
 
 \para{Redundant Hypotheses.}
 When we find a complete match, we add a new hypothesis of the corresponding type $T$ to the goal, but only if there is no other hypothesis of type $T$ already present.
-To efficiently implement this check, we store in the forward match state a set containing the RPINFs of all hypotheses that have been added to (and not subsequently removed from) the state.
+To efficiently implement this check, we store in the forward state a set containing the RPINFs of all hypotheses that have been added to (and not subsequently removed from) the state.
 We modified the naive forward reasoning implementation to use the same mechanism.
 
 \para{Lazy Insertion.}
@@ -957,7 +957,7 @@ Nevertheless, our technique bears some resemblance to the RETE algorithm~\cite{R
 \section{Conclusion}
 
 We have presented a technique that integrates forward reasoning into a tree-based proof search procedure supporting arbitrary proof rules.
-We avoid redundant reasoning steps by caching partial forward rule applications in a data structure, the \emph{forward match state}, that enables efficient updates.
+We avoid redundant reasoning steps by caching partial forward rule applications in a data structure, the \emph{forward state}, that enables efficient updates.
 The technique is independent of the search strategy and logic used.
 Our evaluation shows substantial speedups on some synthetic benchmarks, relative to Aesop's previous implementation.
 
