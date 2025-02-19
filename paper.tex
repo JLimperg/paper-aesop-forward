@@ -600,7 +600,7 @@ Second, parts of the original expression that are proofs (in the sense that thei
 This is justified because Lean's type theory definitionally equates any two proofs of the same proposition, so there is no need to check whether they are equal.
 When computing the RPINF, we also mark all proofs occurring in it with some special \enquote{metadata}.
 
-With this setup, two expressions $t$ and $u$ are definitionally equal at reducible transparency if and only if their RPINFs, $t'$ and $u'$, are syntactically equal except for those subexpressions marked as proofs.
+With this setup, two expressions $t$ and $u$ are definitionally equal at reducible transparency if and only if their RPINFs are syntactically equal except for the marked proof subexpressions.
 This notion of equality is syntactic, so it can be checked quickly and we can define an effective hash function that is compatible with it.
 This allows us to use a hash map for the instantiations while still comparing them up to definitional equality.
 
