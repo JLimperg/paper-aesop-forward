@@ -161,11 +161,11 @@ In many proof assistants, simple \enquote*{white-box} automation tactics based o
 These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
 Faced with an initial goal, the tactics try various user-specified \emph{rules}, which correspond to admissible inferences in the prover's logic.
 A successful rule reduces the current goal to zero or more subgoals, which are solved recursively until either a full proof is found or no rule applies to any open goal or the search times out.
+A typical rule is the $∧$-introduction lemma $A → B → A ∧ B$, which, when applied backwards, reduces a goal $Γ ⊢ A ∧ B$ to subgoals $Γ ⊢ A$ and $Γ ⊢ B$.
 
-Typical rules would be the $∧$-introduction lemma $A → B → A ∧ B$, which, when applied backwards, reduces a goal $Γ ⊢ A ∧ B$ to subgoals $Γ ⊢ A$ and $Γ ⊢ B$; or left $∨$-introduction, which reduces $Γ ⊢ A ∨ B$ to $Γ ⊢ A$.
-Such \emph{backward rules} are the most common rule type, but most search tactics allow users to use any tactic as a rule.
-These rule tactics can output arbitrary subgoals, subject only to the condition that proofs of the returned subgoals can be assembled into a proof of the goal on which the rule was run.
-\jcom{The framing here is wrong: we want to talk about non-forward rules that mess with the context, e.g. case splitting.}
+In addition to such \emph{backwards rules}, most search tactics can also use arbitrary tactics as rules.
+For example, Aesop uses the \texttt{cases} tactic on disjunctive hypotheses, splitting goals of the form $Γ,\, h : A ∨ B ⊢ C$ into subgoals $Γ,\, h : A ⊢ C$ and $Γ,\, h : B ⊢ C$.
+Tactics implement arbitrary inferences; in particular, they can remove any hypothesis and add any provable proposition as a new hypothesis.
 
 ACL2, PVS and Aesop provide special support for \emph{forward rules}.
 Given, for example, the transitivity lemma $\All{x~y~z}{x < y → y < z → x < z}$, a forward rule run on the goal $h₁ : a < b,\, h₂ : b < c ⊢ A$ produces the single subgoal $h₁ : a < b,\, h₂ : b < c,\, h₃ : a < c ⊢ A$.
@@ -174,9 +174,9 @@ For example, the Aeneas project~\cite{Aeneas} uses Aesop's forward rules \jcom{e
 
 However, Aesop's support for forward rules was, until recently, quite basic.
 In particular, each forward rule was tried on each goal separately (subject to pre-filtering by a discrimination tree~\cite{DiscriminationTrees} index).
-This is wasteful since in practice, many rules produce subgoals with a similar---or even the same---context as the initial goal.
-For example, the ∧-introduction rule affects only the goal's target, not its context.
-Still, all forward rules applied to the initial $Γ ⊢ A ∧ B$ would be tried again on the subgoals $Γ ⊢ A$ and $Γ ⊢ B$, with predictably little effect.
+This is wasteful: while in principle any rule can modify the context in any way, in practice many rules produce subgoals with a similar---or even the same---context as the initial goal.
+For example, the ∧-introduction rule (and, in general, any backwards rule) does not affect the goal's context.
+Still, all forward rules applied to the initial goal $Γ ⊢ A ∧ B$ would be tried again on the subgoals $Γ ⊢ A$ and $Γ ⊢ B$, with predictably little effect.
 
 In this paper, we present an alternative way to apply forward rules that addresses this issue.
 The central idea is to remember, for each goal $Γ ⊢ A$, which forward rules can be partially applied to which sets of hypotheses.
