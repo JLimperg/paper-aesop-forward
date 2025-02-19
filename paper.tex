@@ -196,9 +196,8 @@ In addition to this \emph{incrementality}, the forward state satisfies two other
         We therefore want to avoid redundant unifications.
 \end{itemize}
 
-Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation on some (though not all) synthetic benchmarks.
-The implementation, benchmarks and evaluation data are available in a supplement to this paper~\cite{supplement}.
-Mainline Aesop already uses the new implementation by default (TODO true?).
+Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation on some synthetic benchmarks.
+The implementation, benchmarks and evaluation data are available in a supplement to this paper~\cite{supplement} and the new implementation is already available in mainline Aesop.
 
 \section{Preliminaries}
 
@@ -249,18 +248,19 @@ The term orders used in various saturation calculi serve a similar function.
 \section{Naive Forward Reasoning}%
 \label{sec:naive}
 
-\jcom{Formulate this in terms of matches.}
-Prior to this work, Aesop used what we call naive forward reasoning~\cite{Aesop}.
+Prior to this work, Aesop used what we call \emph{naive forward reasoning}~\cite{Aesop}.
 This approach treats forward rules essentially like any other Aesop rule.
-When Aesop selects a forward rule $r : \All{(x₁ : A₁) \dots (xₘ : Aₘ)}{B}$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we first unify the last premise $Aₘ$ with each hypothesis $h : C$ such that $C$ and $Aₘ$ likely unify (as determined by a discrimination tree index).
-If successful, this results in a substitution $σ₁$ containing $xₘ$ and any variables occurring in $Aₘ$.
-We then unify $A_{m-1}[σ₁]$ with the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{m-2}[σ₂]$, etc., until we obtain a complete match for $r$ (skipping premises $A_{m-i}$ if they are already determined by $σᵢ$).
+Hence, when Aesop selects a forward rule $r$ with $m$ slots of types $A₁, \dots, Aₘ$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we look for all complete matches for $r$ in $Γ$.
+
+To that end, we first unify the type of the last slot, $Aₘ$, with each hypothesis $h : B$ such that $B$ and $Aₘ$ likely unify (as determined by a discrimination tree index).
+If successful, this results in a substitution $σ₁$ containing all variables that occur in $Aₘ$.
+We then unify $A_{m-1}[σ₁]$ with the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{m-2}[σ₂]$, etc., until we obtain a complete match for $r$.
 If a premise $A_{m-i}[σᵢ]$ does not unify with any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
 These may lead to a different substitution $τ$ and therefore to matching hypotheses for $A_{i}[τ]$.
-If this process yields at least one full application $r~a₁ \dots aₘ$, we can add a new hypothesis of type $T = B[x₁ ↦ a₁, \dots, xₘ ↦ aₘ]$, meaning we generate the subgoal $Γ, h : T$ (unless $Γ$ already contains a hypothesis of type $T$).
+For each complete match $m$ with substitution $σ$ found during this process, we add a new hypothesis $h : B[σ]$, where $B$ is the conclusion of $r$.
 
-This approach is efficient when the last premise of a rule is not present in the context since the rule is then excluded by indexing and never run.
-If the last premise is present, however, we perform a large number of unifications between premises and hypotheses (though some of these could perhaps be avoided heuristically~\cite{TammetSubsumption}).
+This approach is efficient when the last slot of a rule is not present in the context since the rule is then excluded by indexing and never run.
+Otherwise, we perform a large number of unifications between premises and hypotheses (though some of these could perhaps be avoided heuristically~\cite{TammetSubsumption}).
 Furthermore, the whole process is repeated when we proceed to another goal with a similar context.
 In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited by the naive algorithm.
 
@@ -373,7 +373,6 @@ For $i > 1$, we first insert $h$ into the hypothesis index $H$.
 Then we query the match index $M$ for matches that can be extended by $h$ and add the extended matches to the rule state.
 While adding matches, we may discover new complete matches, which are collected and returned.
 
-% TODO pre- and postcondition?
 \begin{algorithm}
   \Input{A partial match $m$ of $r$ at level $i$ with substitution $σ$}
   \Output{A set of complete matches of $r$}
