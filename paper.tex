@@ -445,15 +445,15 @@ At this point, $H$ and $M$ are in state~\eqref{eq:example1:state1}, shown below.
     \begin{equation}\label{eq:example1:state1}
       H_y\colon
       \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-            \node at (0,0) {2}
-              child {node {$b$}
-                child {node {$\{h₁\}$}}};
+        \node at (0,0) {2}
+          child {node {$b$}
+            child {node {$\{h₁\}$}}};
       \end{tikzpicture}
       M_y\colon
       \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-            \node at (0, 0) {1}
-              child {node {$c$}
-                child {node {$\{[h₁]\}$}}};
+        \node at (0, 0) {1}
+          child {node {$c$}
+            child {node {$\{[h₁]\}$}}};
       \end{tikzpicture}
     \end{equation}
   \end{center}
@@ -463,19 +463,19 @@ At this point, $H$ and $M$ are in state~\eqref{eq:example1:state1}, shown below.
     \begin{equation}\label{eq:example1:state2}
       H_y\colon
       \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, level distance=4em, scale=0.5]
-            \node at (0,0) {2}
-            child {node[xshift=-2] {$b$}
-              child {node {$\{h₁\}$}}}
-            child {node[xshift=2] {$a$}
-              child {node {$\{h₂\}$}}};
+        \node at (0,0) {2}
+          child {node[xshift=-2] {$b$}
+            child {node {$\{h₁\}$}}}
+          child {node[xshift=2] {$a$}
+            child {node {$\{h₂\}$}}};
       \end{tikzpicture}
       M_y\colon
       \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-            \node at (-1, 0) {1}
-            child {node[xshift=-3] {$c$}
-              child {node {$\{[h₁]\}$}}}
-            child {node[xshift=1] {$b$}
-              child {node {$\{[h₂]\}$}}};
+        \node at (-1, 0) {1}
+          child {node[xshift=-4] {$c$}
+            child {node {$\{[h₁]\}$}}}
+          child {node[xshift=4] {$b$}
+            child {node {$\{[h₂]\}$}}};
       \end{tikzpicture}
     \end{equation}
     \end{center}
@@ -512,15 +512,15 @@ We then add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that i
   M_x\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {1}
-    child {node {$a$}
-      child {node {$\{[h_2]\}$}}};
+      child {node {$a$}
+        child {node {$\{[h_2]\}$}}};
   \end{tikzpicture}
   &&
   M_y\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {1}
-    child {node {$b$}
-      child {node {$\{[h_2]\}$}}};
+      child {node {$b$}
+        child {node {$\{[h_2]\}$}}};
   \end{tikzpicture}
 \end{align*}
 
@@ -537,31 +537,31 @@ This yields the following rule state:
   H_x\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {2}
-    child {node {$a$}
-      child {node {$\{h_1, h_3\}$}}};
+      child {node {$a$}
+        child {node {$\{h_1, h_3\}$}}};
   \end{tikzpicture}
   &&
   H_y\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {2}
-    child {node {$a$}
-      child {node {$\{h_1\}$}}}
-    child {node {$b$}
-      child {node {$\{h_3\}$}}};
+      child {node {$a$}
+        child {node {$\{h_1\}$}}}
+      child {node {$b$}
+        child {node {$\{h_3\}$}}};
   \end{tikzpicture}
   &&
   M_x\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {1}
-    child {node {$a$}
-      child {node {$\{[h_2]\}$}}};
+      child {node {$a$}
+        child {node {$\{[h_2]\}$}}};
   \end{tikzpicture}
   &&
   M_y\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {1}
-    child {node {$b$}
-      child {node {$\{[h_2]\}$}}};
+      child {node {$b$}
+        child {node {$\{[h_2]\}$}}};
   \end{tikzpicture}
 \end{align*}
 Since $h₃$ matches slot $i = 2$, the matches that can be extended by $h₃$ are
