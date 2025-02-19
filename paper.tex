@@ -633,7 +633,7 @@ When this rule is used as a forward rule, the premise $a$ matches any non-propos
 \label{sec:evaluation}
 
 There are unfortunately no standard benchmarks for Aesop-like tactics, and since Aesop is not expected to solve most goals without an extensive, manually curated set of rules, benchmarks for push-button theorem provers such as TPTP~\cite{TPTP} are not very meaningful.
-Additionally, forward rules are currently little used by Aesop's main client, the Mathlib mathematics library~\cite{Mathlib}.
+Additionally, forward rules are little used by Aesop's main client, the Mathlib library~\cite{Mathlib}.
 We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that demonstrate the performance characteristics of incremental forward reasoning.
 
 For each benchmark, we set up certain forward rules and a goal with handpicked hypotheses.
@@ -684,7 +684,6 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           coordinates {
             (1, 7.663472) (2, 9.354750) (4, 15.768194) (8, 104.921791) (16, 1882.683111) (32, 45220.919667)  
           };
-        \addlegendentry{naive}
         \addplot[
           color=blue,
           mark=square,
@@ -692,7 +691,6 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           coordinates {
             (1, 10.308541) (2, 10.704638) (4, 16.274305) (8, 38.800833) (16, 179.697681) (32, 1175.888750)
           };
-        \addlegendentry{incremental}
         \addplot[
           color=orange,
           mark=o,
@@ -739,6 +737,7 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           coordinates {
             (1, 10.399958) (2, 16.426541) (4, 43.461403) (8, 205.595541) (16, 1238.090889) (32, 8927.857819)
           };
+          \addlegendentry{naive}
         \addplot[
           color=blue,
           mark=square,
@@ -746,6 +745,7 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
           coordinates {
             (1, 11.231875) (2, 12.879500) (4, 16.851930) (8, 24.666485) (16, 42.054055) (32, 76.369778)
           };
+          \addlegendentry{incremental}
         \addplot[
           color=orange,
           mark=o,
@@ -862,7 +862,7 @@ Accordingly, the naive algorithm has complexity $O(n^{3})$ on this benchmark, ve
         xtick={1,2,3,4,5},
         ymode=log,
         log basis y=2,
-        yticklabels={},
+        %yticklabels={},
         legend pos=north west,
         ymajorgrids=true,
         grid style=dashed,
