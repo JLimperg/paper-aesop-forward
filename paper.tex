@@ -960,6 +960,9 @@ We avoid redundant reasoning steps by caching partial forward rule applications 
 The technique is independent of the search strategy and logic used.
 Our evaluation shows substantial speedups on some synthetic benchmarks, relative to Aesop's previous implementation.
 
+One obvious extension of our method would be to exploit redundancy not just between contexts of parent and child goals, but also between those of siblings or even unrelated goals.
+The forward state supports this since any two goals can be diffed and the old goal's forward state updated to match the new one's context.
+
 \bibliography{lit}
 
 \end{document}
