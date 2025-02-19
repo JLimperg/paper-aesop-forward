@@ -793,17 +793,18 @@ If only the longest such chain, from $a$ to $a + n$, is desired, the transitivit
 This reduces the complexity of the incremental algorithm to $O(n)$.
 
 \paragraph{Independence Benchmark.}
-In the last example, the incremental algorithm performs well partly because it can reuse much of its work.
-We now consider a test with almost no potential for reuse.
+In the last example, the incremental algorithm performs well partly because each match at level~1 can be combined with many hypotheses at level~2 without processing the level~1 hypothesis repeatedly.
+We now consider a benchmark with many independent rules where this kind of reuse does not occur.
 
-Given $n ≥ 1$, we use $n$ forward rules of the form $\All{x}{P_{1}~x → \dots → P_{6}~x}$, where $P_{1}, \dots, P_{6}$ are arbitrary predicates that are distinct from each other and from the predicates of all other rules.
-The initial goal contains one hypothesis of type $P_{i}~a$ for each predicate $P_{i}$ that appears in a rule, where $a$ is again either 0 or 100.
+Given $n ≥ 1$, we use $n$ forward rules of the form $\All{x}{P_{1}~x → \dots → P_{6}~x → Q~x}$, where $P_{1}, \dots, P_{6}$ and $Q$ are arbitrary predicates that are distinct from each other and from the predicates of all other rules.
+The initial goal contains one hypothesis of type $P_{i}~a$ for each predicate $P_{i}$ that appears in a rule slot, where $a$ is again either 0 or 100.
 Hence, each rule can be applied exactly once and each hypothesis matches exactly one slot.
 
 Still, Fig.~\ref{fig:indep} shows that the incremental approach outperforms the naive one for $n ≥ 4$.
-The is because the naive algorithm fails to take much advantage of the rules' independence:
-whenever a hypothesis is added (and thus a new subgoal generated), it re-runs all the rules it had already run on the previous subgoal, realising only after the fact that the rules were already applied.
-This yields a complexity of $O(n^{3})$ for the naive algorithm versus $O(n)$ for the incremental algorithm.
+This is because incrementality helps even in this scenario.
+Whenever a hypothesis is added (and hence a new subgoal created), the naive algorithm re-runs all the rules it had already run on the previous subgoal, realising only after the fact that the rules were already applied.
+The incremental algorithm avoids this source of redundancy.
+Accordingly, the naive algorithm has complexity $O(n^{3})$ on this benchmark, versus $O(n)$ for the incremental algorithm.
 
 \begin{figure}
   \centering
@@ -918,22 +919,22 @@ This yields a complexity of $O(n^{3})$ for the naive algorithm versus $O(n)$ for
 \end{figure}
 
 \paragraph{Depth Benchmark.}
-Our final benchmark concerns situations where a rule matches almost, but not quite.
-We use a single rule $r : \All{x}{P_{1}~x → \dots → P_{n}~x → A}$, where the predicates $P_{i}$ are all distinct and $A$ is an arbitrary proposition.
+Our final benchmark concerns situations where many rules match almost, but not quite.
+We use 100 copies of a rule $r : \All{x}{P_{1}~x → \dots → P_{n}~x → A}$, where the predicates $P_{i}$ are all distinct and $A$ is an arbitrary proposition.
 \jcom{What is $n$?}
-Given a \emph{depth} $k ≤ n$, the initial goal contains hypotheses of types $P_{i}~a$ for $1 ≤ i ≤ n$ and $i ≠ n - k$ as well as one hypothesis $P_{n-k}~(a + 1)$ (with $a = 0$ or $a = 100$ as before).
-In other words, the hypotheses match all premises with compatible substitutions, except the $k$-th premise from the back.
-Since the naive algorithm processes the premises back-to-front, $k$ corresponds to the number of premises that it matches before it becomes clear that the rule cannot be applied.
+Given a \emph{depth} $k ≤ n$, the initial goal contains hypotheses of types $P_{i}~a$ for each $i ≠ n - k$ with $1 ≤ i ≤ n$, as well as one hypothesis $P_{n-k}~(a + 1)$ (with $a = 0$ or $a = 100$).
+In other words, the hypotheses match all premises with compatible substitutions, except the $k^{\text{th}}$ premise from the back.
+Since the naive algorithm processes the premises back-to-front, $k$ determines how many premises the algorithm matches before it notices that the rule cannot be applied.
 
-This setup is challenging for the incremental approach because (a) no rule is ever applied, so incrementality does not help; and (b) the incremental algorithm expends a non-negligible amount of effort for each of the $n$ hypothesis, whereas the naive algorithm can, at least for small $k$, decide fairly quickly that the rule is not applicable.
-And indeed, Fig.~\ref{fig:erase-noprecomp} shows that the naive approach scales with $k$ while the incremental one does not, but the constant factors are so high that the incremental approach remains slower for $k$ up to 5.
+This setup is challenging for the incremental approach because (1) no rule is ever applied, so incrementality does not help; and (2) the incremental algorithm expends a non-negligible amount of effort for each of the $n$ hypotheses, whereas the naive algorithm can, at least for small $k$, decide fairly quickly that the rule is not applicable.
+And indeed, Fig.~\ref{fig:erase-noprecomp} shows that while the naive approach slows down for greater $k$, big constant factors cause the incremental approach to remain slower for $k$ up to 5.
 
-Fig.~\ref{fig:erase-precomp}, however, shows a different picture, with the incremental approach leading in most cases.
-The figure shows the results of running the same depth benchmark with \emph{precompilation} enabled.
-This is a feature of Lean that compiles tactics ahead of time (whereas they are normally interpreted).
+Fig.~\ref{fig:erase-precomp}, however, shows a different picture, with the incremental approach leading for all $k > 1$.
+The figure visualises the results of the depth benchmark with \emph{precompilation} enabled.
+This is a feature of Lean that compiles tactics ahead of time instead of interpreting them.
 Our technique appears to benefit from this much more than the naive approach, perhaps because the RPINF calculation incurs a large interpretation overhead.
-%Precompilation is by default turned off for Mathlib4 as it amplifies its already long compilation time.
-%Users working on projects that uses a lot of forward reasoning can however chose to pay this compilation time price once and then benefit from fast forward reasoning.
+We observe the same effect when enabling precompilation for the other benchmarks.
+Unfortunately, precompilation also substantially increases Aesop's build time and slows down Lean's build tool, Lake, so we disable it by default, but users of Aesop can choose to enable it for faster forward reasoning.
 
 \section{Related Work}
 
