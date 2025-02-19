@@ -1,4 +1,4 @@
-\documentclass[runningheads]{llncs}
+\documentclass[runningheads,leqno]{llncs}
 
 % TODO: standardise indices vs indexes
 % TODO: standardise dots after equations
@@ -437,90 +437,92 @@ No matches at level~1 can be extended by $h₁$ since
 \[
   \bigcap_{x \in \vars(2)} M_{x}(1, σ(x)) = M_{y}(1, b) = \emptyset
 \]
-At this point, $H$ and $M$ are in the state shown in Diagram~\eqref{eq:example1:state1}.
+At this point, $H$ and $M$ are in state~\eqref{eq:example1:state1}, shown below.
+
+\begin{center}
+  \begin{minipage}{0.44\textwidth}
+    \begin{center}
+    \begin{equation}\label{eq:example1:state1}
+      H_y\colon
+      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
+            \node at (0,0) {2}
+              child {node {$b$}
+                child {node {$\{h₁\}$}}};
+      \end{tikzpicture}
+      M_y\colon
+      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
+            \node at (0, 0) {1}
+              child {node {$c$}
+                child {node {$\{[h₁]\}$}}};
+      \end{tikzpicture}
+    \end{equation}
+  \end{center}
+  \end{minipage}
+  \begin{minipage}{0.55\textwidth}
+    \begin{center}
+    \begin{equation}\label{eq:example1:state2}
+      H_y\colon
+      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, level distance=4em, scale=0.5]
+            \node at (0,0) {2}
+            child {node[xshift=-2] {$b$}
+              child {node {$\{h₁\}$}}}
+            child {node[xshift=2] {$a$}
+              child {node {$\{h₂\}$}}};
+      \end{tikzpicture}
+      M_y\colon
+      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
+            \node at (-1, 0) {1}
+            child {node[xshift=-3] {$c$}
+              child {node {$\{[h₁]\}$}}}
+            child {node[xshift=1] {$b$}
+              child {node {$\{[h₂]\}$}}};
+      \end{tikzpicture}
+    \end{equation}
+    \end{center}
+  \end{minipage}
+\end{center}
 
 Now we add $h₂ : a ≤ b$, which again unifies with both slots.
 For slot~1, $\sub₁(h₂)(y) = b$, so we add the match $[h₂]$ to $M_{y}(1, b)$.
 We then check for hypotheses in slot~2 that also instantiate $y$ with $b$, and indeed we find $M_{y}(2, b) = \{h₁\}$.
 Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : a ≤ c$ to be added later.
 For slot~2, we add $h₂$ to $H_{y}(2, a)$.
-There are no compatible matches at level~1 so we are done with $h₂$, yielding the final rule state in Diagram~\eqref{eq:example1:state2}.
-
-    \begin{minipage}{0.40\textwidth}
-      \begin{center}
-      \begin{equation}\label{eq:example1:state1}
-        H_y : 
-        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-              \node at (0,0) {2}
-                child {node {$b$}
-                  child {node {$\{h₁\}$}}};
-        \end{tikzpicture}
-        M_y : 
-        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-              \node at (0, 0) {1}
-                child {node {$c$}
-                  child {node {$\{[h₁]\}$}}};
-        \end{tikzpicture}
-      \end{equation}
-    \end{center}
-    \end{minipage}
-    \begin{minipage}{0.55\textwidth}
-      \begin{center}
-      \begin{equation}\label{eq:example1:state2}
-        H_y : 
-        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, level distance=4em, scale=0.5]
-              \node at (0,0) {2}
-              child {node[xshift=-2] {$b$}
-                child {node {$\{h₁\}$}}}
-              child {node[xshift=2] {$a$}
-                child {node {$\{h₂\}$}}};
-        \end{tikzpicture}
-        M_y : 
-        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-              \node at (-1, 0) {1}
-              child {node[xshift=-3] {$c$}
-                child {node {$\{[h₁]\}$}}}
-              child {node[xshift=1] {$b$}
-                child {node {$\{[h₂]\}$}}};
-        \end{tikzpicture}
-      \end{equation}
-      \end{center}
-    \end{minipage}
+There are no compatible matches at level~1 so we are done with $h₂$, yielding the final rule state~\eqref{eq:example1:state2}.
 
 \paragraph{Example 2.}
 We now consider a rule $r₂ : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
 We add hypotheses $h₁ : B~a~a$, $h₂ : A~a~b$ and $h₃ : B~a~b$ to the rule state of $r₂$, starting with $h₁$, which is added to $H$ with slot~2.
 There are no matches yet, so there is nothing to extend.
-We then add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that is added to $M$, yielding the rule state in Diagram~\eqref{eq:example2:state1}:
-  \begin{align}\label{eq:example2:state1}
-    H_x : 
-    \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
-      \node at (0, 0) {2}
-        child {node {$a$}
-          child {node {$\{h_1\}$}}};
-    \end{tikzpicture}
-    &&
-    H_y : 
-    \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
-      \node at (0, 0) {2}
-        child {node {$a$}
-          child {node {$\{h_1\}$}}};
-    \end{tikzpicture}
-    &&
-    M_x : 
-    \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
-      \node at (0, 0) {1}
+We then add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that is added to $M$, yielding the following rule state:
+\begin{align*}
+  H_x\colon
+  \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
+    \node at (0, 0) {2}
       child {node {$a$}
-        child {node {$\{[h_2]\}$}}};
-    \end{tikzpicture}
-    &&
-    M_y : 
-    \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
-      \node at (0, 0) {1}
-      child {node {$b$}
-        child {node {$\{[h_2]\}$}}};
-    \end{tikzpicture}
-  \end{align}
+        child {node {$\{h_1\}$}}};
+  \end{tikzpicture}
+  &&
+  H_y\colon
+  \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
+    \node at (0, 0) {2}
+      child {node {$a$}
+        child {node {$\{h_1\}$}}};
+  \end{tikzpicture}
+  &&
+  M_x\colon
+  \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
+    \node at (0, 0) {1}
+    child {node {$a$}
+      child {node {$\{[h_2]\}$}}};
+  \end{tikzpicture}
+  &&
+  M_y\colon
+  \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
+    \node at (0, 0) {1}
+    child {node {$b$}
+      child {node {$\{[h_2]\}$}}};
+  \end{tikzpicture}
+\end{align*}
 
 To find hypotheses compatible with $m$, we consider the set of variables $\vars(\lvl(m) + 1)$.
 These are the variables shared between slot~$\lvl(m) + 1 = 2$ and all previous slots, i.e.\ $x$ and $y$.
@@ -530,22 +532,16 @@ Hence the compatible hypotheses are
 \]
 This means the match cannot currently be extended.
 We now turn to the remaining hypothesis $h_3 : B~a~b$, adding it first to $H$.
-This yields the rule state in Diagram~\eqref{eq:example2:state2}.
-Since $h₃$ matches slot $i = 2$, the matches that can be extended by $h₃$ are
-\[
-  \bigcap_{x \in \vars(i)} M_{x}(i - 1, \sub_{i}(x)) = M_{x}(1, a) \cap M_{y}(1, b) = \{[h₂]\}
-\]
-This produces the complete match $[h₂, h₃]$, so we can add a new hypothesis of type $C~a~b$.
-
-\begin{align}\label{eq:example2:state2}
-  H_x : 
+This yields the following rule state:
+\begin{align*}
+  H_x\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {2}
     child {node {$a$}
       child {node {$\{h_1, h_3\}$}}};
   \end{tikzpicture}
   &&
-  H_y : 
+  H_y\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {2}
     child {node {$a$}
@@ -554,20 +550,25 @@ This produces the complete match $[h₂, h₃]$, so we can add a new hypothesis 
       child {node {$\{h_3\}$}}};
   \end{tikzpicture}
   &&
-  M_x : 
+  M_x\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {1}
     child {node {$a$}
       child {node {$\{[h_2]\}$}}};
   \end{tikzpicture}
   &&
-  M_y : 
+  M_y\colon
   \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)},outer sep=auto, level distance=4em, scale=0.50]
     \node at (0, 0) {1}
     child {node {$b$}
       child {node {$\{[h_2]\}$}}};
   \end{tikzpicture}
-\end{align}
+\end{align*}
+Since $h₃$ matches slot $i = 2$, the matches that can be extended by $h₃$ are
+\[
+  \bigcap_{x \in \vars(i)} M_{x}(i - 1, \sub_{i}(x)) = M_{x}(1, a) \cap M_{y}(1, b) = \{[h₂]\}
+\]
+This produces the complete match $[h₂, h₃]$, so we can add a new hypothesis of type $C~a~b$.
 
 \section{Implementation}%
 \label{sec:implementation}
