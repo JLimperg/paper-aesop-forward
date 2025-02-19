@@ -336,33 +336,33 @@ The number of shared variables tends to be small in practice, so these intersect
 
 From these observations we can directly derive two procedures for adding hypotheses and matches to the rule state.
 The procedures maintain the invariants of the variable indices while reporting any complete matches discovered during this process.
+Specifically, if a rule state for a rule $r$ represents the context $Γ$---i.e., it contains the hypotheses of $Γ$ and all partial matches of $r$ that can be derived from them---then the rule state obtained from $\addHyp(h : T)$ represents $Γ,\, h : T$.
 
 \begin{algorithm}
-  \SetKwInOut{Precondition}{Precondition}
-  \SetKwInOut{Postcondition}{Postcondition}
-  \Precondition{$H$ and $M$ contain the hypotheses and matches corresponding to a context $Γ$}
-  \Input{A hypothesis $h : T$ matching slot $i$ of $r$ with substitution $σ$}
-  \Output{Complete matches of $r$ in context $Γ,\, h : T$ that contain $h$}
-  \Postcondition{$H$ and $M$ contain the hypotheses and matches corresponding to $Γ,\, h : T$}
+  \Input{A hypothesis $h : T$}
+  \Output{All complete matches of $r$ in context $Γ,\, h : T$ that contain $h$}
   \BlankLine
   \Procedure{$\mathrm{addHyp}(h : T)$}{
-    \eIf{$i = 1$}{
-      $\mathrm{addMatch}([h])$
-    }{
-      \For{$x$ \KwIn $\vars(i)$}{
-        Insert $h$ into the set $H_{x}(i, σ(h))$
+    \For{all slots $i$ of $r$ such that $h$ matches $i$}{
+      \eIf{$i = 1$}{
+        $\mathrm{addMatch}([h])$
+      }{
+        \KwLet $σ ≔ \sub_{i}(h)$ \\
+        \For{$x$ \KwIn $\vars(i)$}{
+          Insert $h$ into the set $H_{x}(i, σ(h))$
+        }
+        \KwLet $\mathit{ms} ≔ \bigcap_{x \in \vars(i)} M_{x}(i-1, σ(x))$ \\
+        $\mathit{completeMs} \gets ∅$ \\
+        \For{$m$ \KwIn $\mathit{ms}$}{
+          $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m \mathbin{++} [h])$
+        }
+        \Return{$\mathit{completeMs}$}
       }
-      \KwLet $\mathit{ms} ≔ \bigcap_{x \in \vars(i)} M_{x}(i-1, σ(x))$ \\
-      $\mathit{completeMs} \gets ∅$ \\
-      \For{$m$ \KwIn $\mathit{ms}$}{
-        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ++ [h])$
-      }
-      \Return{$\mathit{completeMs}$}
     }
   }
   \BlankLine % without these, the caption is not offset properly
   \BlankLine
-  \caption{Adding a hypothesis to the rule state for a rule $r$}%
+  \caption{Add a hypothesis to the rule state for a rule $r$ and context $Γ$}%
   \label{alg:addhyp}
 \end{algorithm}
 
@@ -388,14 +388,14 @@ While adding matches, we may discover new complete matches, which are collected 
       \KwLet $\mathit{hs} ≔ \bigcap_{x \in \vars(i + 1)} H_{x}(i + 1, σ(x))$ \\
       $\mathit{completeMs} \gets ∅$ \\
       \For{$h$ \KwIn $\mathit{hs}$}{
-        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m ++ [h])$
+        $\mathit{completeMs} \gets \mathit{completeMs} ∪ \mathrm{addMatch}(m \mathbin{++} [h])$
       }
       \Return{$\mathit{completeMs}$}
     }
   }
   \BlankLine % without these, the caption is not offset properly
   \BlankLine
-  \caption{Adding a match to the rule state for a rule $r$}%
+  \caption{Add a match to the rule state for a rule $r$}%
   \label{alg:addmatch}
 \end{algorithm}
 
