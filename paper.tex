@@ -440,44 +440,44 @@ No matches at level~1 can be extended by $h₁$ since
 At this point, $H$ and $M$ are in state~\eqref{eq:example1:state1}, shown below.
 
 \begin{center}
-  \begin{minipage}{0.44\textwidth}
+  \begin{minipage}{0.43\textwidth}
     \begin{center}
-    \begin{equation}\label{eq:example1:state1}
-      H_y\colon
-      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-        \node at (0,0) {2}
-          child {node {$b$}
-            child {node {$\{h₁\}$}}};
-      \end{tikzpicture}
-      M_y\colon
-      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-        \node at (0, 0) {1}
-          child {node {$c$}
-            child {node {$\{[h₁]\}$}}};
-      \end{tikzpicture}
-    \end{equation}
-  \end{center}
+      \begin{align}\label{eq:example1:state1}
+        H_y\colon
+        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
+          \node at (0,0) {2}
+            child {node {$b$}
+              child {node {$\{h₁\}$}}};
+        \end{tikzpicture}
+        && M_y\colon
+        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
+          \node at (0, 0) {1}
+            child {node {$c$}
+              child {node {$\{[h₁]\}$}}};
+        \end{tikzpicture}
+      \end{align}
+    \end{center}
   \end{minipage}
-  \begin{minipage}{0.55\textwidth}
+  \begin{minipage}{0.56\textwidth}
     \begin{center}
-    \begin{equation}\label{eq:example1:state2}
-      H_y\colon
-      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, level distance=4em, scale=0.5]
-        \node at (0,0) {2}
-          child {node[xshift=-2] {$b$}
-            child {node {$\{h₁\}$}}}
-          child {node[xshift=2] {$a$}
-            child {node {$\{h₂\}$}}};
-      \end{tikzpicture}
-      M_y\colon
-      \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
-        \node at (-1, 0) {1}
-          child {node[xshift=-4] {$c$}
-            child {node {$\{[h₁]\}$}}}
-          child {node[xshift=4] {$b$}
-            child {node {$\{[h₂]\}$}}};
-      \end{tikzpicture}
-    \end{equation}
+      \begin{align}\label{eq:example1:state2}
+        H_y\colon
+        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, level distance=4em, scale=0.5]
+          \node at (0,0) {2}
+            child {node[xshift=-2] {$b$}
+              child {node {$\{h₁\}$}}}
+            child {node[xshift=2] {$a$}
+              child {node {$\{h₂\}$}}};
+        \end{tikzpicture}
+        && M_y\colon
+        \begin{tikzpicture}[baseline={([yshift=-.5ex]current bounding box.center)}, outer sep=auto, level distance=4em, scale=0.5]
+          \node at (-1, 0) {1}
+            child {node[xshift=-4] {$c$}
+              child {node {$\{[h₁]\}$}}}
+            child {node[xshift=4] {$b$}
+              child {node {$\{[h₂]\}$}}};
+        \end{tikzpicture}
+      \end{align}
     \end{center}
   \end{minipage}
 \end{center}
