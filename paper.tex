@@ -164,7 +164,7 @@ A successful rule reduces the current goal to zero or more subgoals, which are s
 A typical rule is the $∧$-introduction lemma $A → B → A ∧ B$, which, when applied backwards, reduces a goal $Γ ⊢ A ∧ B$ to subgoals $Γ ⊢ A$ and $Γ ⊢ B$.
 
 In addition to such \emph{backwards rules}, most search tactics can also use arbitrary tactics as rules.
-For example, Aesop uses the \texttt{cases} tactic on disjunctive hypotheses, splitting goals of the form $Γ,\, h : A ∨ B ⊢ C$ into subgoals $Γ,\, h : A ⊢ C$ and $Γ,\, h : B ⊢ C$.
+For example, Aesop uses the cases tactic on disjunctive hypotheses, splitting goals of the form $Γ,\, h : A ∨ B ⊢ C$ into subgoals $Γ,\, h : A ⊢ C$ and $Γ,\, h : B ⊢ C$.
 Tactics implement arbitrary inferences; in particular, they can remove any hypothesis and add any provable proposition as a new hypothesis.
 
 ACL2, PVS and Aesop provide special support for \emph{forward rules}.
@@ -929,15 +929,18 @@ Unfortunately, precompilation also substantially increases Aesop's build time an
 
 \section{Related Work}
 
-\paragraph{ACL2 and PVS.}
-Among white-box proof automation tactics, to our knowledge only ACL2's \enquote{waterfall}~\cite{ACL2} and PVS's various proof search strategies~\cite{ACL2,PVS} have special support for forward reasoning.
+\paragraph{White-Box Tactics.}
+Among white-box proof automation tactics, to our knowledge only ACL2's \enquote{waterfall}~\cite{ACL2} and PVS's various proof search strategies~\cite{PVS} have special support for forward reasoning.
 Both use essentially Aesop's naive algorithm, i.e.\ the context of each goal is saturated independently without reusing partial results from other goals.
 ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be selected based on the presence of a particular term anywhere in the goal, rather than based on particular hypotheses.
 Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
-Some other white-box tactics, e.g.\ Rocq's auto, can execute arbitrary tactics including forward rules, but make no special provisions for them.
+
+The auto2 tactic~\cite{auto2} employs an SMT-like search procedure based on forward reasoning and e-matching~\cite{simplify}.
+As such, it does not require incrementality, but it could perhaps benefit from indexing along the lines of our variable indices.
+Many other white-box tactics can execute arbitrary tactics, including forward rules, but make no special provisions for them.
 
 \paragraph{SATCHMO.}
-The SATCHMO first-order theorem prover~\cite{SATCHMO} uses a search procedure that treats a given set of implications as forward rules and uses a single non-forward rule to perform case analysis on disjunctive hypotheses.
+The SATCHMO first-order theorem prover~\cite{SATCHMO} uses a search procedure that treats a given set of implications as forward rules and uses a case-splitting rule to perform case analysis on disjunctive hypotheses.
 SATCHMO-style provers may benefit from our incremental approach if the set of implications is large.
 However, since unification is comparatively cheap in first-order logic, it is not clear whether avoiding repeated unifications outweighs the cost of maintaining the forward state.
 SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning on the hypothesis established by the last case split, providing a different form of incrementality.
@@ -946,8 +949,6 @@ SATCHMO also employs an optimisation that \enquote*{focuses} forward reasoning o
 Some knowledge-based reasoning systems, e.g.\ Algernon~\cite{Algernon} and EYE~\cite{EYE}, support combined forward and backward reasoning.
 However, to our knowledge, no such system allows non-forward rules to change the assumptions available to forward rules, so they do not require incrementality.
 Nevertheless, our technique bears some resemblance to the RETE algorithm~\cite{RETE} for forward reasoning in large knowledge bases.
-
-\jcom{auto2?}
 
 \section{Conclusion}
 
