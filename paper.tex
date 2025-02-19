@@ -378,7 +378,7 @@ While adding matches, we may discover new complete matches, which are collected 
   \Input{A partial match $m$ of $r$ at level $i$ with substitution $σ$}
   \Output{A set of complete matches of $r$}
   \BlankLine
-  \Procedure{$\mathrm{addMatch}(h : T)$}{
+  \Procedure{$\mathrm{addMatch}(m)$}{
     \eIf{$i$ is complete}{
       \Return{$\{m\}$}
     }{
