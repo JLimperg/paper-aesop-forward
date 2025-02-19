@@ -570,7 +570,6 @@ This produces the complete match $[h₂, h₃]$, so we can add a new hypothesis 
 \label{sec:implementation}
 
 Implementing the preceding technique efficiently requires some care, particularly in the context of dependent type theory.
-We briefly discuss the most prominent challenges.
 
 \paragraph{Unification.}
 In Lean's type theory, types contain programs and unification is expected to respect definitional equality, i.e.\ equality up to evaluation.
@@ -580,61 +579,55 @@ Our technique therefore seeks to minimise the number of unifications performed.
 
 To limit the expense of unification, we perform unification at \emph{reducible} transparency.
 Lean has multiple transparency levels that determine which constants are unfolded.
-\enquote{Reducible} is the most restrictive of these, so we unfold few (and, in practice, only non-recursive) definitions, which greatly reduces the cost of unification.
-However, this limits the power of forward reasoning since fewer terms can be unified.
-
-We also need to account for higher-order unification problems: $Q~\mvar{f}$, where $Q$ is a predicate over functions and $\mvar{f}$ is a function variable, should unify with $Q~(\Lam{x}{x})$.
-Since higher-order unification is undecidable~\cite{ThirdOrderUnificationUndecidableLucchesi,ThirdOrderUnificationUndecidableHuet,SecondOrderUnificationUndecidable}, we instead use a unification algorithm provided by Lean that is complete for first-order unification problems and heuristically solves some higher-order problems as well.
-This makes our technique incomplete in the sense that some theorem instantiations will be missed, but since the same unification algorithm is used throughout Lean, users are well acquainted with this form of incompleteness.
+\enquote{Reducible} is the most restrictive of these, so we unfold few (and, in practice, only non-recursive) definitions.
+Additionally, we use Lean's usual approximation of higher-order unification, which is complete for first-order unification problems and heuristically solves some higher-order problems.
+Either of these limitations render forward reasoning incomplete, but since the same unification is used throughout Lean, users are used to this.
 
 During unification, we treat metavariables in hypotheses as constants, i.e.\ we never assign them.
-This reflects the expected behaviour of forward rules: given a hypothesis $\mvar{x} < \mvar{y}$, we would not expect a forward rule to commit to the choice $\mvar{x} ≔ 1$ and $\mvar{y} ≔ 0$ just because this allows the rule to derive a contradiction.
+This reflects the expected behaviour of forward rules: given a hypothesis $h : \mvar{x} < \mvar{y}$ and rule $1 < 0 → ⊥$, applying the rule to $h$ would replace $\mvar{x}$ with 1 and $\mvar{y}$ with 0 in all goals where $\mvar{x}$ and $\mvar{y}$ appear, even though this may render some goals unprovable.
 
-\paragraph{Data Representation.}
-Since the hypothesis index $H$ and the variable index $M$ of a rule state have the same domain, we combine them into one map.
-This core data structure is then represented by nested persistent hash maps: a first hash map maps variables to a second hash map; the second hash map maps slots to a third hash map; and the third hash map maps instantiations to sets of hypotheses and sets of partial matches.
+\paragraph{RPINF.}
+Since the hypothesis index $H$ and the match index $M$ of a rule state have the same domain, we combine them into one map.
+This map, whose domain is a set of triples $(x, i, t)$, is represented by three nested persistent hash maps.
 
-When we compare instantiations, the comparison should be up to definitional equality.
-For example, when we try to apply a theorem $\All{x}{P~x → Q~x → R~x}$ where the first slot matches a hypothesis of type $P~a$ and the second slot matches a hypothesis of type $P~((\Lam{x}{x})~a)$, the application should succeed even though the instantiations of $\mvar{x}$ are different.
-We therefore do not store $a$ and $(\Lam{x}{x})~a$ in the variable maps as-is.
-
-Instead, we bring all instantiations into a normal form which we call \emph{reducible proof-irrelevant normal form} (RPINF).
+When looking up matching instantiations in the combined map, the instantiations should be compared up to definitional equality.
+For example, the application of a theorem $\All{x}{P~x → Q~x → R~x}$ to hypotheses of type $P~a$ and $Q~((\Lam{x}{x})~a)$ should succeed even though $x$ is instantiated with different terms.
+We therefore do not store $a$ and $(\Lam{x}{x})~a$ in the variable indices as-is.
+Instead, we bring all instantiations into \emph{reducible proof-irrelevant normal form} (RPINF).
 This is the usual normal form of expressions with respect to Lean's notion of computation, with two modifications.
-First, only \emph{reducible} defined constants are unfolded.
-This reflects our choice to perform unification at reducible transparency.
-Second, parts of the original expression that are proofs (in the sense that their types are members of the universe $\Prop$ of propositions) are not normalised.
-This reflects the fact that Lean's type theory definitionally equates any two proofs of the same proposition, so there is no need to check whether they are equal.
+First, only \emph{reducible} defined constants are unfolded, reflecting our choice to perform unification at reducible transparency.
+Second, parts of the original expression that are proofs (in the sense that their types are in the universe of propositions) are not normalised.
+This is justified because Lean's type theory definitionally equates any two proofs of the same proposition, so there is no need to check whether they are equal.
 When computing the RPINF, we also mark all proofs occurring in it with some special \enquote{metadata}.
 
-With this setup, two expressions $t$ and $u$ are definitionally equal at reducible transparency if and only if their RPINFs, $t'$ and $u'$, are syntactically equal except for those portions of $t'$ and $u'$ that are proofs, which are always considered equal.
-Since this is an entirely syntactic notion of equality, it can be checked quickly and we can define an effective hash function that is compatible with it.
+With this setup, two expressions $t$ and $u$ are definitionally equal at reducible transparency if and only if their RPINFs, $t'$ and $u'$, are syntactically equal except for those subexpressions marked as proofs.
+This notion of equality is syntactic, so it can be checked quickly and we can define an effective hash function that is compatible with it.
 This allows us to use a hash map for the instantiations while still comparing them up to definitional equality.
 
-We believe that this scheme is more efficient than alternative schemes relying on repeated unification.
-For example, we could use Lean's implementation of imperfect discrimination trees, which implement a map from expressions to arbitrary data where lookup respects definitional equality.
-However, since these discrimination trees are imperfect, they may return spurious lookup results, so whether a lookup result is valid must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
-We believe that repeatedly performing such unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
-
-\paragraph{Lazy Insertion.}
-Adding a hypothesis to a rule state is fairly cheap, but not free: it involves one unification for each slot that the hypothesis likely matches (according to a discrimination tree index), followed by several operations on the variable indices.
-We therefore delay insertions until the index has selected at least one hypothesis for each slot.
-This helps, for example, with the defining rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
-When this rule is used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but with lazy insertion we only process $a$ if there is, in fact, an involutive function is the context.
+We believe that this scheme is more efficient than alternative schemes relying on repeated unifications.
+For example, we could use Lean's discrimination trees, which implement a map from expressions to arbitrary data where lookup respects definitional equality.
+However, these discrimination trees are imperfect, so the validity of a lookup result must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
+We believe that performing these unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
 \paragraph{Match Equivalence.}
-Naively, two matches $[h₁, \dots, hₙ]$ and $[h₁', \dots, hₙ']$ would be considered equal if they are structurally equal, i.e.\ $h₁ = h₁'$, \dots, $hₙ = hₙ'$.
+Naively, two matches would be considered equal if they contain the same hypotheses (up to definitional equality, again implemented via RPINF).
 However, consider the rule $r : \All{x~y}{P~x~y → Q~x~z → R~x}$ and the hypotheses $h₁ : P~a~b$, $h₂ : P~a~c$, $h₃ : Q~a~d$ and $h₄ : Q~a~e$.
-The complete matches $m₁ ≔ [h₁, h₃]$ and $m₁' ≔ [h₁, h₄]$ are structurally different, but the difference does not matter because the applications $r~h₁~h₃$ and $r~h₁~h₄$ both have type $R~a$.
+The complete matches $m₁ ≔ [h₁, h₃]$ and $m₁' ≔ [h₁, h₄]$ contain different hypotheses, but the difference does not matter because the applications $r~h₁~h₃$ and $r~h₁~h₄$ both have type $R~a$.
 Generating both $m₁$ and $m₁'$ would therefore be redundant.
-Similarly, the partial matches $m₂ ≔ [h₁]$ and $m₂' ≔ [h₂]$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete $m₂$ and $m₂'$.
+Similarly, the partial matches $m₂ ≔ [h₁]$ and $m₂' ≔ [h₂]$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete them.
 Hence we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
 Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ with conclusion $A$ equal if $\lvl(m) = \lvl(m')$ and for each variable $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
-To ensure that we respect definitional equality, the instantiations in the substitutions are kept in RPINF.
 
 \paragraph{Redundant Hypotheses.}
 When we find a complete match, we add a new hypothesis of the corresponding type $T$ to the goal, but only if there is no other hypothesis of type $T$ already present.
 To efficiently implement this check, we store in the forward match state a set containing the RPINFs of all hypotheses that have been added to (and not subsequently removed from) the state.
 We modified the naive forward reasoning implementation to use the same mechanism.
+
+\paragraph{Lazy Insertion.}
+Adding a hypothesis to a rule state is cheap, but not free: it involves one unification for each slot that the hypothesis may match, according to a discrimination tree index, followed by several operations on the variable indices.
+We therefore delay insertions until the index has selected at least one hypothesis for each slot.
+This helps, for example, with the defining rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
+When this rule is used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but with lazy insertion we only process hypotheses for $a$ if there is, in fact, an involutive function in the context.
 
 \section{Evaluation}%
 \label{sec:evaluation}
