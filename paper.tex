@@ -112,7 +112,7 @@
 
 \newcommand{\Lam}[2]{\ensuremath{\lambda\, #1,\; #2}}
 \newcommand{\All}[2]{\ensuremath{\forall\, #1,\; #2}}
-\newcommand{\mvar}[1]{\ensuremath{?#1}}
+\newcommand{\mvar}[1]{\ensuremath{{?#1}}}
 \newcommand{\Prop}{\ensuremath{\mathrm{Prop}}}
 \newcommand{\vars}{\ensuremath{\mathrm{vars}}}
 \newcommand{\dom}{\ensuremath{\mathrm{dom}}}
@@ -158,7 +158,7 @@
 
 \section{Introduction}
 
-In many proof assistants, simple \enquote*{white-box} automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's~\cite{Isabelle} and Rocq's~\cite{Coq} auto~\cite{IsabelleAuto}, ACL2's \enquote{waterfall}~\cite{ACL2}, various PVS~\cite{PVS,PVS-tutorial} tactics, Lean's~\cite{Lean4} Aesop~\cite{Aesop}, etc.
+In many proof assistants, simple \enquote*{white-box} automation tactics based on tableau-style tree search play a substantial role in practice: Isabelle's~\cite{Isabelle} and Rocq's~\cite{Coq} auto~\cite{IsabelleAuto}, ACL2's \enquote{waterfall}~\cite{ACL2}, various PVS~\cite{PVS-tutorial,PVS} tactics, Lean's~\cite{Lean4} Aesop~\cite{Aesop}, etc.
 These tactics operate on \emph{goals} $Γ ⊢ A$, where the \emph{context} $Γ$ is a list of assumptions and $A$ is the proposition to be proved.
 Faced with an initial goal, the tactics try various user-specified \emph{rules}, which correspond to admissible inferences in the prover's logic.
 A successful rule reduces the current goal to zero or more subgoals, which are solved recursively until either a full proof is found or no rule applies to any open goal or the search times out.
@@ -175,7 +175,7 @@ For example, the Aeneas project~\cite{Aeneas} uses Aesop's forward rules in its 
 
 Until recently, Aesop used what we call the \emph{naive algorithm} to apply forward rules.
 When a forward rule was run on a goal, the rule would search the goal's context for all combinations of hypotheses satisfying its premises.
-This method is simple, but involves much repeated work because in practice, contexts encountered during the search tend to be similar.
+This method is simple but involves much repeated work because in practice, contexts encountered during the search tend to be similar.
 For example, the ∧-introduction rule, when run on $Γ ⊢ A ∧ B$, produces subgoals $Γ ⊢ A$ and $Γ ⊢ B$, so the naive algorithm runs the same forward rules on the same context three times.
 More generally, any backwards rule leaves the context unchanged, and many rules that change the context do so only in limited ways.
 
@@ -186,18 +186,19 @@ Hence it is generally cheaper (and often much cheaper) to start with the partial
 The update first deletes partial matches that include hypotheses no longer present in $Δᵢ$.
 Afterwards it adds new partial matches for the hypotheses that are new in $Δᵢ$, extending the existing partial matches for a rule if the new hypothesis is compatible with them.
 Whenever this process produces a full match---i.e., all premises of a forward rule are satisfied by a set of hypothesis in $Δᵢ$---the rule is applied and adds a corresponding new hypothesis to $Δᵢ$.
-Our main contribution is a data structure, the \emph{forward state}, that organises the partial matches in such a way that the update can be done efficiently.
+
+Our main contribution is a data structure, the \emph{forward state}, that organises the partial matches so that updates can be done efficiently.
 In addition to this \emph{incrementality}, the forward state satisfies two other desiderata:
 \begin{itemize}
   \item It is \emph{persistent}, i.e.\ forward states for parent and child goals share much of their structure.
         This is desirable since Aesop supports search strategies other than depth-first search and must therefore keep all goals encountered during the search, along with their forward states, in memory.
   \item It reduces the number of \emph{unifications} performed when matching hypotheses against rule premises.
-        In dependent type theory, unification happens up to definitional equality, which makes it quite expensive.
+        In dependent type theory, unification happens up to definitional equality, which makes it expensive.
         We therefore want to avoid redundant unifications.
 \end{itemize}
 
-Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation on some synthetic benchmarks.
-The implementation, benchmarks and evaluation data are available in a supplement to this paper~\cite{supplement} and the new implementation is already available in mainline Aesop.
+Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation on synthetic benchmarks.
+The implementation, benchmarks and evaluation data are available in a supplement to this paper~\cite{supplement} and the new implementation is already available for the newest version of Aesop.
 
 \section{Preliminaries}
 
@@ -205,9 +206,9 @@ We first introduce some terminology for matches and for forward rules (which we 
 Our foundation in this paper is dependent type theory, but our technique can be adapted to other logics.
 
 Given a lemma $\All{(x₁ : A₁) \dots (xₙ : Aₙ)}{B}$, the $xᵢ$ are \emph{premises} and $B$ is the lemma's \emph{conclusion}.
-The type $Aᵢ$ of the $i$-th premise may depend on (i.e., refer to) any premise $xⱼ$ with $j < i$.
+The type $Aᵢ$ of the $i$th premise may depend on (i.e., refer to) any premise $xⱼ$ with $j < i$.
 Implication $A → B$ is an abbreviation for $\All{x : A}{B}$ where $B$ does not depend on $x$.
-Propositions are (certain) types and we do not distinguish between the two concepts.
+Propositions are (certain) types, and we do not distinguish between the two concepts.
 
 Premises on which a later premise depends are \emph{variables}.
 All other premises are \emph{input premises}.
@@ -217,22 +218,24 @@ If a variable occurs in at least two premises, like $y$ above, it is \emph{share
 For a lemma with $n$ input premises, we assign to each input premise a unique number between $1$ and $n$.
 This is the premise's \emph{slot}, which we often identify with the premise itself.
 For now, we assume that the input premises are numbered consecutively, so in the above example slot~1 has type $x < y$ and slot~2 has type $y < z$.
-The \emph{shared variables of slot $i$}, $\vars(i)$ are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
+The \emph{shared variables of slot $i$}, $\vars(i)$, are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
 
 If $h : A$ is a hypothesis in the context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
 Unification induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
-For now we do not specify exactly what \enquote{unifies} means; see Sec.~\ref{sec:implementation}.
+In Sec.~\ref{sec:implementation}., we will specify exactly what \enquote{unifies} means.
 
 A \textit{match} $m$ for a give rule $r$ with $n$ slots is a list containing at least one and at most $n$ hypotheses.
 We interpret $m$ as a partial map from slots of $r$ to hypotheses, so $\dom(m) = \{i \mid 1 ≤ i ≤ |m| \}$ and for each slot $i ∈ \dom(m)$, $m(i)$ is the hypothesis assigned to $i$.
 Each match $m$ must satisfy the following requirements:
 \begin{enumerate}
   \item\label{cond:match:matches} For each slot $i ∈ \dom(m)$, the hypothesis $m(i)$ matches $i$.
+  %\smallspace
+
   \item\label{cond:match:compat} For all slots $i,j ∈ \dom(m)$, the substitutions $\sub_{i}(m(i))$ and $\sub_{j}(m(j))$ are \emph{compatible}.
         This means that the substitutions agree on all common variables, i.e.\ for each variable $x ∈ \dom(\sub_{i}(m(i))) ∩ \dom(\sub_{j}(m(j)))$ we have $\sub_{i}(m(i))(x) = \sub_{j}(m(j))(x)$.
 \end{enumerate}
 The \emph{substitution of a match $m$}, $\sub(m)$, is the union of the substitutions induced by the hypotheses in $m$, i.e. $\sub(m) ≔ ⋃_{i ∈ \dom(m)}\sub_{i}(m(i))$.
-This is well-defined by requirement~\ref{cond:match:compat}.
+This is well defined by requirement~\ref{cond:match:compat}.
 The \textit{level of a match $m$}, $\lvl(m)$, is the length of $m$.
 A match for rule $r$ is \textit{complete} if $i ∈ \dom(M)$ for every slot $i$ of $r$, and \emph{partial} otherwise.
 
@@ -241,14 +244,14 @@ The application is type-correct by requirements~\ref{cond:match:matches} and~\re
 If $m$ is complete, then $\sub(m)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
 
 Note that matches represent only those partial applications where arguments are added without gaps.
-Hence for a rule $r : A → B → C → D$, the partial applications $r~a$ and $r~a~b$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\text{--}~b$.
+Hence for a rule $r : A → B → C → D$, the applications $r~a~\_ : B \to D$ and $r~a~b : D$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\_~b : A \to D$.
 This will prevent us from constructing $r~a~b$ in two different but ultimately redundant ways.
 The term orders used in various saturation calculi serve a similar function.
 
 \section{Naive Forward Reasoning}%
 \label{sec:naive}
 
-Prior to this work, Aesop used what we call \emph{naive forward reasoning}~\cite{Aesop}.
+Before this work, Aesop used what we call \emph{naive forward reasoning}~\cite{Aesop}.
 This approach treats forward rules essentially like any other Aesop rule.
 Hence, when Aesop selects a forward rule $r$ with $m$ slots of types $A₁, \dots, Aₘ$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we look for all complete matches for $r$ in $Γ$.
 
@@ -273,15 +276,15 @@ This rests on the assumption that $Δ$ is likely similar to $Γ$ in practice, an
 Our main contribution is a data structure, the \emph{forward state}, that allows us to perform these updates efficiently.
 
 \para{Forward States.}
-We associate to each goal in Aesop's search tree a forward state that reflects the goal's context.
+We associate with each goal in Aesop's search tree a forward state that reflects the goal's context.
 Let $\States$ be the set of forward states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
 The forward state's interface then consists of two functions
 \begin{equation*}
   \addHyp : \States → \Hyps → \States × \powerset(\Rules × \CMatches) \qquad \delHyp : \States → \Hyps → \States
 \end{equation*}
 The $\addHyp$ function adds a hypothesis to the forward state.
-Hence, if $s$ is the forward state corresponding to context $Γ$ and $\addHyp(s, h : T) = (s', C)$, then $s'$ is the forward state corresponding to $Γ,\, h : T$.
-Similarly, if $s$ is the forward state corresponding to $Γ, h : T$, then $\delHyp(s, h : T)$ is the forward state corresponding to $Γ$.
+Hence, if $s$ is the forward state corresponding to context $Γ$ and $\addHyp(s,\, h : T) = (s', C)$, then $s'$ is the forward state corresponding to $Γ,\, h : T$.
+Similarly, if $s$ is the forward state corresponding to $Γ, h : T$, then $\delHyp(s,\, h : T)$ is the forward state corresponding to $Γ$.
 The second output of $\addHyp$, $C$, is a set of pairs $(r, m)$ where $r$ is a rule and $m$ is a complete match for $r$.
 These are the matches that were completed by adding $h : T$.
 
@@ -590,13 +593,13 @@ Either of these limitations render forward reasoning incomplete, but since the s
 During unification, we treat metavariables in hypotheses as constants, i.e.\ we never assign them.
 This reflects the expected behaviour of forward rules: given a hypothesis $h : \mvar{x} < \mvar{y}$ and rule $1 < 0 → ⊥$, applying the rule to $h$ would replace $\mvar{x}$ with 1 and $\mvar{y}$ with 0 in all goals where $\mvar{x}$ and $\mvar{y}$ appear, even though this may render some goals unprovable.
 
-\para{RPINF.}
+\para{Normal Form.}
 Since the hypothesis index $H$ and the match index $M$ of a rule state have the same domain, we combine them into one map.
 This map, whose domain is a set of triples $(x, i, t)$, is represented by three nested persistent hash maps.
 
 When looking up matching instantiations in the combined map, the instantiations should be compared up to definitional equality.
 For example, the application of a theorem $\All{x}{P~x → Q~x → R~x}$ to hypotheses of type $P~a$ and $Q~((\Lam{x}{x})~a)$ should succeed even though $x$ is instantiated with different terms.
-We therefore do not store $a$ and $(\Lam{x}{x})~a$ in the variable indices as-is.
+We therefore do not store $a$ and $(\Lam{x}{x})~a$ in the variable indices as is.
 Instead, we bring all instantiations into \emph{reducible proof-irrelevant normal form} (RPINF).
 This is the usual normal form of expressions with respect to Lean's notion of computation, with two modifications.
 First, only \emph{reducible} defined constants are unfolded, reflecting our choice to perform unification at reducible transparency.
@@ -608,7 +611,7 @@ With this setup, two expressions $t$ and $u$ are definitionally equal at reducib
 This notion of equality is syntactic, so it can be checked quickly and we can define an effective hash function that is compatible with it.
 This allows us to use a hash map for the instantiations while still comparing them up to definitional equality.
 
-We believe that this scheme is more efficient than alternative schemes relying on repeated unifications.
+There are reasons to believe that this scheme is more efficient than alternative schemes relying on repeated unifications.
 For example, we could use Lean's discrimination trees, which implement a map from expressions to arbitrary data where lookup respects definitional equality.
 However, these discrimination trees are imperfect, so the validity of a lookup result must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
 We believe that performing these unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
@@ -636,7 +639,7 @@ When this rule is used as a forward rule, the premise $a$ matches any non-propos
 \section{Evaluation}%
 \label{sec:evaluation}
 
-There are unfortunately no standard benchmarks for Aesop-like tactics, and since Aesop is not expected to solve most goals without an extensive, manually curated set of rules, benchmarks for push-button theorem provers such as TPTP~\cite{TPTP} are not very meaningful.
+There are unfortunately no standard benchmarks for Aesop-like tactics, and since Aesop is not expected to solve most goals without an extensive, manually curated set of rules, benchmarks for push-button theorem provers such as TPTP~\cite{TPTP} are not meaningful.
 Additionally, forward rules are little used by Aesop's main client, the Mathlib library~\cite{Mathlib}.
 We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that demonstrate the performance characteristics of incremental forward reasoning.
 
@@ -789,7 +792,7 @@ If only the longest such chain, from $a$ to $a + n$, is desired, the transitivit
 This reduces the complexity of the incremental algorithm to $O(n)$.
 
 \para{Independence Benchmark.}
-In the last example, the incremental algorithm performs well partly because each match at level~1 can be combined with many hypotheses at level~2 without processing the level~1 hypothesis repeatedly.
+In the previous example, the incremental algorithm performs well partly because each match at level~1 can be combined with many hypotheses at level~2 without processing the level~1 hypothesis repeatedly.
 We now consider a benchmark with many independent rules where this kind of reuse does not occur.
 
 Given $n ≥ 1$, we use $n$ forward rules of the form $\All{x}{P_{1}~x → \dots → P_{6}~x → Q~x}$, where $P_{1}, \dots, P_{6}$ and $Q$ are arbitrary predicates that are distinct from each other and from the predicates of all other rules.
@@ -918,8 +921,8 @@ Accordingly, the naive algorithm has complexity $O(n^{3})$ on this benchmark, ve
 Our final benchmark concerns situations where many rules match almost, but not quite.
 We use 100 copies of a rule $r : \All{x}{P_{1}~x → \dots → P_{n}~x → A}$, where the predicates $P_{i}$ are all distinct and $A$ is an arbitrary proposition.
 Given a \emph{depth} $k ≤ n$, the initial goal contains hypotheses of types $P_{i}~a$ for each $i ≠ n - k$ with $1 ≤ i ≤ n$, as well as one hypothesis $P_{n-k}~(a + 1)$ (with $a = 0$ or $a = 100$).
-In other words, the hypotheses match all premises with compatible substitutions, except the $k^{\text{th}}$ premise from the back.
-Since the naive algorithm processes the premises back-to-front, $k$ determines how many premises the algorithm matches before it notices that the rule cannot be applied.
+In other words, the hypotheses match all premises with compatible substitutions, except the $k$th premise from the back.
+Since the naive algorithm processes the premises from back to front, $k$ determines how many premises the algorithm matches before it notices that the rule cannot be applied.
 
 This setup is challenging for the incremental algorithm because (1) no rule is ever applied, so incrementality does not help; and (2) the incremental algorithm expends a non-negligible amount of effort for each of the $n$ hypotheses, whereas the naive algorithm can, at least for small $k$, decide fairly quickly that the rule is not applicable.
 And indeed, Fig.~\ref{fig:erase-noprecomp} shows that while the naive approach slows down for greater $k$, big constant factors cause the incremental approach to remain slower for $k$ up to 5.
@@ -959,10 +962,10 @@ Nevertheless, our technique bears some resemblance to the RETE algorithm~\cite{R
 We have presented a technique that integrates forward reasoning into a tree-based proof search procedure supporting arbitrary proof rules.
 We avoid redundant reasoning steps by caching partial forward rule applications in a data structure, the \emph{forward state}, that enables efficient updates.
 The technique is independent of the search strategy and logic used.
-Our evaluation shows substantial speedups on some synthetic benchmarks, relative to Aesop's previous implementation.
+Our evaluation shows substantial speedups on synthetic benchmarks, relative to Aesop's previous implementation.
 
 One obvious extension of our method would be to exploit redundancy not just between contexts of parent and child goals, but also between those of siblings or even unrelated goals.
-The forward state supports this since any two goals can be diffed and the old goal's forward state updated to match the new one's context.
+The forward state supports this since for any two goals, we can adapt a goal's saved forward state to a similar goal.
 
 \bibliography{lit}
 
