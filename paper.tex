@@ -176,7 +176,7 @@ For example, the Aeneas project~\cite{Aeneas} uses Aesop's forward rules in its 
 Until recently, Aesop used what we call the \emph{naive algorithm} to apply forward rules.
 When a forward rule was run on a goal, the rule would search the goal's context for all combinations of hypotheses satisfying its premises.
 This method is simple but involves much repeated work because in practice, contexts encountered during the search tend to be similar.
-For example, the ∧-introduction rule, when run on $Γ ⊢ A ∧ B$, produces subgoals $Γ ⊢ A$ and $Γ ⊢ B$, so the naive algorithm runs the same forward rules on the same context three times.
+For example, the ∧-introduction rule, when run on $Γ ⊢ A ∧ B$, produces subgoals $Γ ⊢ A$ and $Γ ⊢ B$, so the naive algorithm runs the same forward rules on the same context $Γ$ three times.
 More generally, any backwards rule leaves the context unchanged, and many rules that change the context do so only in limited ways.
 
 In this paper, we present an alternative way to apply forward rules that addresses this issue.
@@ -224,7 +224,7 @@ If $h : A$ is a hypothesis in the context of a goal and $A$ unifies with the typ
 Unification induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
 In Sec.~\ref{sec:implementation}., we will specify exactly what \enquote{unifies} means.
 
-A \textit{match} $m$ for a give rule $r$ with $n$ slots is a list containing at least one and at most $n$ hypotheses.
+A \textit{match} $m$ for a given rule $r$ with $n$ slots is a list containing at least one and at most $n$ hypotheses.
 We interpret $m$ as a partial map from slots of $r$ to hypotheses, so $\dom(m) = \{i \mid 1 ≤ i ≤ |m| \}$ and for each slot $i ∈ \dom(m)$, $m(i)$ is the hypothesis assigned to $i$.
 Each match $m$ must satisfy the following requirements:
 \begin{enumerate}
@@ -352,7 +352,7 @@ Specifically, if a rule state for a rule $r$ represents the context $Γ$---i.e.,
       }{
         \KwLet $σ ≔ \sub_{i}(h)$ \\
         \For{$x$ \KwIn $\vars(i)$}{
-          Insert $h$ into the set $H_{x}(i, σ(h))$
+          Insert $h$ into the set $H_{x}(i, σ(x))$
         }
         \KwLet $\mathit{ms} ≔ \bigcap_{x \in \vars(i)} M_{x}(i-1, σ(x))$ \\
         $\mathit{completeMs} \gets ∅$ \\
@@ -487,7 +487,7 @@ At this point, $H$ and $M$ are in state~\eqref{eq:example1:state1}, shown below.
 
 Now we add $h₂ : a ≤ b$, which again unifies with both slots.
 For slot~1, $\sub₁(h₂)(y) = b$, so we add the match $[h₂]$ to $M_{y}(1, b)$.
-We then check for hypotheses in slot~2 that also instantiate $y$ with $b$, and indeed we find $M_{y}(2, b) = \{h₁\}$.
+We then check for hypotheses in slot~2 that also instantiate $y$ with $b$, and indeed we find $H_{y}(2, b) = \{h₁\}$.
 Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : a ≤ c$ to be added later.
 For slot~2, we add $h₂$ to $H_{y}(2, a)$.
 There are no compatible matches at level~1 so we are done with $h₂$, yielding the final rule state~\eqref{eq:example1:state2}.
