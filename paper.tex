@@ -149,7 +149,7 @@
   In this setting we consider \emph{forward rules}, which apply a given theorem, say, $A → B → C$, to any goal containing hypotheses $A$ and $B$, adding $C$ as a new hypothesis.
   When treated naively, such rules are tried on every goal encountered during the search, leading to repeated unifications of premises $A$ and $B$ with the hypotheses of each goal.
   We present an approach to forward rules that avoids some of this repeated work by taking advantage of similarities between successive goals.
-  For each goal, we cache partial applications of forward rules in a custom data structure, the \emph{forward state}, which enables efficient updates.
+  For each goal, we cache partial applications of forward rules in a custom data structure that enables efficient updates.
   Our technique is compatible with any search strategy and most logics.
   It has been implemented in Aesop.
 
