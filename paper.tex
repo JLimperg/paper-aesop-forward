@@ -198,7 +198,7 @@ In addition to this \emph{incrementality}, the forward state satisfies two other
 \end{itemize}
 
 Our evaluation (Sec.~\ref{sec:evaluation}) shows that this new implementation of forward reasoning in Aesop substantially outperforms the previous, naive implementation on synthetic benchmarks.
-The implementation, benchmarks and evaluation data are available in a supplement to this paper~\cite{supplement} and the new implementation is already available for the newest version of Aesop.
+The implementation, benchmarks and evaluation data are available in a supplement to this paper~\cite{supplement} and the new implementation is already available in the newest version of Aesop.
 
 \section{Preliminaries}
 
@@ -284,7 +284,7 @@ The forward state's interface then consists of two functions
 \end{equation*}
 The $\addHyp$ function adds a hypothesis to the forward state.
 Hence, if $s$ is the forward state corresponding to context $Γ$ and $\addHyp(s,\, h : T) = (s', C)$, then $s'$ is the forward state corresponding to $Γ,\, h : T$.
-Similarly, if $s$ is the forward state corresponding to $Γ, h : T$, then $\delHyp(s,\, h : T)$ is the forward state corresponding to $Γ$.
+Similarly, if $s$ is the forward state corresponding to $Γ,\, h : T$, then $\delHyp(s,\, h : T)$ is the forward state corresponding to $Γ$.
 The second output of $\addHyp$, $C$, is a set of pairs $(r, m)$ where $r$ is a rule and $m$ is a complete match for $r$.
 These are the matches that were completed by adding $h : T$.
 
