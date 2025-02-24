@@ -407,16 +407,13 @@ Otherwise $m$ is inserted into $M$ and we query $H$ for hypotheses that can exte
 Any extended matches thus produced are added to the rule state recursively.
 
 \para{Variable Clusters.}
-We have so far assumed that for each slot $i > 1$, the set of shared variables $\vars(i)$ is nonempty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
-This assumption is violated for rules such as $\All{x~y}{P~x → Q~y → R~x~y}$: slot~2 ($Q~y$) shares no variables with slot~1 ($P~x$).
-As a result, our above algorithms fail.
-Suppose we are adding the hypothesis $h₂ : Q~b$, having already added the hypothesis $h₁ : P~a$ and hence the partial match $[h₁]$.
-The set of matches compatible with $h₂$ is supposedly $\bigcap_{x \in \vars(2)} M_{x}(i-1, σ(x)) = ∅$, but the match $[h₁]$ can be extended with $h₂$.
-In fact, any match at level~1 can be extended with any hypothesis matching slot~2 since the two slots are independent.
+We have so far only considered rules where for each slot $i > 1$, the set of shared variables $\vars(i)$ is nonempty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
+However, there are also rules such as $\All{x~y}{P~x → Q~y → R~x~y}$, where slot~2 ($Q~y$) shares no variables with slot~1 ($P~x$).
+In this case, any match at level 1 can be extended with any hypothesis at level 2, since the two slots are independent.
 
 To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, called \emph{variable clusters}, using the same construction as Aesop's \emph{metavariable clusters}~\cite{Aesop}.
 The variable clusters share no variables with each other, so each can be treated as a separate rule with its own rule state.
-Finding a complete match for a rule amounts to finding one complete match for each of its clusters.
+Finding a complete match for a rule then amounts to finding one complete match for each of its clusters.
 The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
 
 \para{Deletion.}
