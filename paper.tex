@@ -253,17 +253,17 @@ The term orders used in various saturation calculi serve a similar function.
 
 Before this work, Aesop used what we call \emph{naive forward reasoning}~\cite{Aesop}.
 This approach treats forward rules essentially like any other Aesop rule.
-Hence, when Aesop selects a forward rule $r$ with $n$ slots of types $A₁, \dots, Aₙ$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we look for all complete matches for $r$ in $Γ$.
+Hence, when Aesop selects a forward rule $r$ with $n$ slots of types $A₁, \dots, Aₙ$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we look for all complete matches for $r$ in $Γ$, using an approach reminiscent of backtracking subsumption algorithms.
 
-To that end, we first match the type of the last slot, $Aₙ$, with each hypothesis $h : B$ (using a discrimination tree index to quickly determine potentially matching hypotheses).
-If successful, this results in a substitution $σ₁$ containing all variables that occur in $Aₘ$.
-We then match $A_{m-1}[σ₁]$ against the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{m-2}[σ₂]$, etc., until we obtain a complete match for $r$.
-If a premise $A_{m-i}[σᵢ]$ does not match any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
-These may lead to a different substitution $τ$ and therefore to different matching hypotheses for $A_{i}[τ]$.
+More specifically, we first match the type of the last slot, $Aₙ$, with each hypothesis $h : B$ (using a discrimination tree index to quickly determine potentially matching hypotheses).
+If successful, this results in a substitution $σ₁$ containing all variables that occur in $Aₙ$.
+We then match $A_{ₙ-1}[σ₁]$ against the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{ₙ-2}[σ₂]$, etc., until we obtain a complete match for $r$.
+If a premise $A_{ₙ-i}[σᵢ]$ does not match any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{ₙ-i+1}$.
+These may lead to a different substitution $τ$ and therefore to different matching hypotheses for $A_{ₙ-i}[τ]$.
 For each complete match $m$ with substitution $σ$ found during this process, we add a new hypothesis of type $B[σ]$, where $B$ is the conclusion of $r$.
 
 This approach is efficient when the last slot of a rule is not present in the context since the rule is then excluded by indexing and never run.
-Otherwise, we match large numbers of premises and hypotheses against each other (though this could likely be sped up heuristically~\cite{TammetSubsumption}).
+Otherwise, we match large numbers of premises and hypotheses against each other, though this process could likely be sped up heuristically~\cite{TammetSubsumption}.
 Moreover, the whole process is repeated when we proceed to another goal with a similar context.
 In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be similar to the current context, but the naive algorithm does not exploit these similarities.
 
