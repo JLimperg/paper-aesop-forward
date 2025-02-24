@@ -958,7 +958,7 @@ The technique is independent of the search strategy and logic used.
 Our evaluation shows substantial speedups on synthetic benchmarks, relative to Aesop's previous implementation.
 
 One obvious extension of our method would be to exploit redundancy not just between contexts of parent and child goals, but also between those of siblings or even unrelated goals.
-The forward state supports this since for any two goals, we can adapt a goal's saved forward state to a similar goal.
+This would require no changes to the forward state data structure; we would only need to find pairs of goals that produce minimal diffs.
 
 \para{Acknowledgements.}
 We thank Jasmin Blanchette and Massin Guerdi for their valuable comments on drafts of this paper.
