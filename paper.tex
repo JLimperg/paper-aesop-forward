@@ -932,13 +932,12 @@ Unfortunately, precompilation also substantially increases Aesop's build time an
 
 \para{White-Box Tactics.}
 Among white-box proof automation tactics, to our knowledge only ACL2's \enquote{waterfall}~\cite{ACL2} and PVS's various proof search strategies~\cite{PVS} have special support for forward reasoning.
-Both use essentially Aesop's naive algorithm, i.e.\ the context of each goal is saturated independently without reusing partial results from other goals.
-ACL2 additionally supports \emph{trigger terms}, which allow forward rules to be selected based on the presence of a particular term anywhere in the goal, rather than based on particular hypotheses.
+Both use techniques similar to Aesop's naive algorithm; in particular, the context of each goal is saturated independently.
+ACL2 additionally allows forward rules to be annotated with \emph{trigger terms}, which cause the rules to be run if the trigger terms are matched anywhere in a goal.
 Aesop implements a similar mechanism, \emph{rule patterns}, not described here due to space constraints.
 
 The auto2 tactic~\cite{auto2} employs an SMT-like search procedure based on forward reasoning and e-matching~\cite{simplify}.
 As such, it does not require incrementality, but it could perhaps benefit from indexing along the lines of our variable indices.
-Many other white-box tactics can execute arbitrary tactics, including forward rules, but make no special provisions for them.
 
 \para{SATCHMO.}
 The SATCHMO first-order theorem prover~\cite{SATCHMO} uses a search procedure that treats a given set of implications as forward rules and uses a case-splitting rule to perform case analysis on disjunctive hypotheses.
