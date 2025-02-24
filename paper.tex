@@ -114,7 +114,7 @@
 \newcommand{\All}[2]{\ensuremath{\forall\, #1,\; #2}}
 \newcommand{\mvar}[1]{\ensuremath{{?#1}}}
 \newcommand{\Prop}{\ensuremath{\mathrm{Prop}}}
-\newcommand{\vars}{\ensuremath{\mathrm{vars}}}
+\newcommand{\vars}{\ensuremath{\mathrm{svars}}}
 \newcommand{\dom}{\ensuremath{\mathrm{dom}}}
 \newcommand{\sub}{\ensuremath{\mathrm{sub}}}
 \newcommand{\lvl}{\ensuremath{\mathrm{lvl}}}
@@ -203,21 +203,22 @@ The implementation, benchmarks and evaluation data are available in a supplement
 \section{Preliminaries}
 
 We first introduce some terminology for matches and for forward rules (which we identify with their underlying lemmas).
-Our foundation in this paper is dependent type theory, but our technique can be adapted to other logics.
+We use dependent type theory as a foundation, but our technique generalises to other logics.
 
 Given a lemma $\All{(x₁ : A₁) \dots (xₙ : Aₙ)}{B}$, the $xᵢ$ are \emph{premises} and $B$ is the lemma's \emph{conclusion}.
 The type $Aᵢ$ of the $i$th premise may depend on (i.e., refer to) any premise $xⱼ$ with $j < i$.
 Implication $A → B$ is an abbreviation for $\All{x : A}{B}$ where $B$ does not depend on $x$.
 Propositions are (certain) types, and we do not distinguish between the two concepts.
 
-Premises on which a later premise depends are \emph{variables}.
-All other premises are \emph{input premises}.
-For example, the lemma $\All{x~y~z}{x < y → y < z → x < z}$ has variables $x, y, z$ and (unnamed) input premises of types $x < y$ and $y < z$.
-If a variable occurs in at least two premises, like $y$ above, it is \emph{shared}.
+Using somewhat non-standard terminology, we call premises on which a later premise depends \emph{variables}.
+These are typically terms of non-propositional types, e.g.\ natural numbers or lists.
+The non-variable premises, whose types are typically propositions, are called \emph{slots}.
+For example, the lemma $\All{(x~y~z : ℕ)}{x < y → y < z → x < z}$ has variables $x, y, z$ and slots of types $x < y$ and $y < z$.
+If more than two premises depend on a variable (e.g.\ $y$), the variable is \emph{shared}.
+Note that premises on which only the conclusion depends are not considered variables.
 
-For a lemma with $n$ input premises, we assign to each input premise a unique number between $1$ and $n$.
-This is the premise's \emph{slot}, which we often identify with the premise itself.
-For now, we assume that the input premises are numbered consecutively, so in the above example slot~1 has type $x < y$ and slot~2 has type $y < z$.
+If a lemma has $n$ slots, each slot is assigned a unique number between $1$ and $n$, and we identify slots with their numbers.
+For now, we assume that the slots are numbered consecutively, so in the example above slot~1 has type $x < y$ and slot~2 has type $y < z$.
 The \emph{shared variables of slot $i$}, $\vars(i)$, are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
 
 If $h : A$ is a hypothesis in the context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
@@ -226,10 +227,9 @@ In Sec.~\ref{sec:implementation}., we will specify exactly what \enquote{unifies
 
 A \textit{match} $m$ for a given rule $r$ with $n$ slots is a list containing at least one and at most $n$ hypotheses.
 We interpret $m$ as a partial map from slots of $r$ to hypotheses, so $\dom(m) = \{i \mid 1 ≤ i ≤ |m| \}$ and for each slot $i ∈ \dom(m)$, $m(i)$ is the hypothesis assigned to $i$.
-Each match $m$ must satisfy the following requirements:
+A match $m$ must additionally satisfy the following requirements:
 \begin{enumerate}
   \item\label{cond:match:matches} For each slot $i ∈ \dom(m)$, the hypothesis $m(i)$ matches $i$.
-  %\smallspace
 
   \item\label{cond:match:compat} For all slots $i,j ∈ \dom(m)$, the substitutions $\sub_{i}(m(i))$ and $\sub_{j}(m(j))$ are \emph{compatible}.
         This means that the substitutions agree on all common variables, i.e.\ for each variable $x ∈ \dom(\sub_{i}(m(i))) ∩ \dom(\sub_{j}(m(j)))$ we have $\sub_{i}(m(i))(x) = \sub_{j}(m(j))(x)$.
@@ -623,7 +623,7 @@ The complete matches $m₁ ≔ [h₁, h₃]$ and $m₁' ≔ [h₁, h₄]$ contai
 Generating both $m₁$ and $m₁'$ would therefore be redundant.
 Similarly, the partial matches $m₂ ≔ [h₁]$ and $m₂' ≔ [h₂]$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete them.
 Hence we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
-Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ with conclusion $A$ equal if $\lvl(m) = \lvl(m')$ and for each variable $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
+Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ with conclusion $A$ equal if $\lvl(m) = \lvl(m')$ and for each premise $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
 
 \para{Redundant Hypotheses.}
 When we find a complete match, we add a new hypothesis of the corresponding type $T$ to the goal, but only if there is no other hypothesis of type $T$ already present.
