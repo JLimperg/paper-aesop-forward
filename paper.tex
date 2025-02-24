@@ -414,7 +414,7 @@ In this case, any match at level 1 can be extended with any hypothesis at level 
 To account for this fact, we partition the set of premises of each rule into maximal subsets of premises connected by shared variables, called \emph{variable clusters}, using the same construction as Aesop's \emph{metavariable clusters}~\cite{Aesop}.
 The variable clusters share no variables with each other, so each can be treated as a separate rule with its own rule state.
 Finding a complete match for a rule then amounts to finding one complete match for each of its clusters.
-The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots, satisfying our assumption.
+The slots within each cluster can be ordered to ensure that each slot shares at least one variable with the previous slots.
 
 \para{Deletion.}
 When a hypothesis $h$ is removed from a goal's context, we must update the forward state accordingly.
