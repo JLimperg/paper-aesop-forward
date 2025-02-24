@@ -221,9 +221,9 @@ If a lemma has $n$ slots, each slot is assigned a unique number between $1$ and 
 For now, we assume that the slots are numbered consecutively, so in the example above slot~1 has type $x < y$ and slot~2 has type $y < z$.
 The \emph{shared variables of slot $i$}, $\vars(i)$, are those variables that appear in the type of $i$ and also in at least one type of a slot $j < i$.
 
-If $h : A$ is a hypothesis in the context of a goal and $A$ unifies with the type $B$ of slot $i$, we say that $h$ \emph{matches} $i$.
-Unification induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $B[σ]$; we call this substitution $\sub_{i}(h)$.
-In Sec.~\ref{sec:implementation}., we will specify exactly what \enquote{unifies} means.
+If $h : C$ is a hypothesis and $C$ matches the type $A$ of slot $i$, we say that $h$ \emph{matches} $i$.
+Matching induces a substitution $σ$ such that $A[σ]$ is definitionally equal to $C$; we define $\sub_{i}(h) ≔ σ$.
+What exactly \enquote{matching} means is discussed in Sec.~\ref{sec:implementation}.
 
 A \textit{match} $m$ for a given rule $r$ with $n$ slots is a list containing at least one and at most $n$ hypotheses.
 We interpret $m$ as a partial map from slots of $r$ to hypotheses, so $\dom(m) = \{i \mid 1 ≤ i ≤ |m| \}$ and for each slot $i ∈ \dom(m)$, $m(i)$ is the hypothesis assigned to $i$.
@@ -245,7 +245,7 @@ If $m$ is complete, then $\sub(m)$ contains a term for every slot and every vari
 
 Note that matches represent only those partial applications where arguments are added without gaps.
 Hence for a rule $r : A → B → C → D$, the applications $r~a~\_ : B \to D$ and $r~a~b : D$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\_~b : A \to D$.
-This will prevent us from constructing $r~a~b$ in two different but ultimately redundant ways.
+This prevents us from constructing $r~a~b$ in two different but ultimately redundant ways.
 The term orders used in various saturation calculi serve a similar function.
 
 \section{Naive Forward Reasoning}%
@@ -253,19 +253,19 @@ The term orders used in various saturation calculi serve a similar function.
 
 Before this work, Aesop used what we call \emph{naive forward reasoning}~\cite{Aesop}.
 This approach treats forward rules essentially like any other Aesop rule.
-Hence, when Aesop selects a forward rule $r$ with $m$ slots of types $A₁, \dots, Aₘ$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we look for all complete matches for $r$ in $Γ$.
+Hence, when Aesop selects a forward rule $r$ with $n$ slots of types $A₁, \dots, Aₙ$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we look for all complete matches for $r$ in $Γ$.
 
-To that end, we first unify the type of the last slot, $Aₘ$, with each hypothesis $h : B$ such that $B$ and $Aₘ$ likely unify (as determined by a discrimination tree index).
+To that end, we first match the type of the last slot, $Aₙ$, with each hypothesis $h : B$ (using a discrimination tree index to quickly determine potentially matching hypotheses).
 If successful, this results in a substitution $σ₁$ containing all variables that occur in $Aₘ$.
-We then unify $A_{m-1}[σ₁]$ with the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{m-2}[σ₂]$, etc., until we obtain a complete match for $r$.
-If a premise $A_{m-i}[σᵢ]$ does not unify with any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
-These may lead to a different substitution $τ$ and therefore to matching hypotheses for $A_{i}[τ]$.
-For each complete match $m$ with substitution $σ$ found during this process, we add a new hypothesis $h : B[σ]$, where $B$ is the conclusion of $r$.
+We then match $A_{m-1}[σ₁]$ against the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{m-2}[σ₂]$, etc., until we obtain a complete match for $r$.
+If a premise $A_{m-i}[σᵢ]$ does not match any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{i+1}$.
+These may lead to a different substitution $τ$ and therefore to different matching hypotheses for $A_{i}[τ]$.
+For each complete match $m$ with substitution $σ$ found during this process, we add a new hypothesis of type $B[σ]$, where $B$ is the conclusion of $r$.
 
 This approach is efficient when the last slot of a rule is not present in the context since the rule is then excluded by indexing and never run.
-Otherwise, we perform a large number of unifications between premises and hypotheses (though some of these could perhaps be avoided heuristically~\cite{TammetSubsumption}).
-Furthermore, the whole process is repeated when we proceed to another goal with a similar context.
-In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be substantially similar, if not identical, to the current context, but these similarities are not exploited by the naive algorithm.
+Otherwise, we match large numbers of premises and hypotheses against each other (though this could likely be sped up heuristically~\cite{TammetSubsumption}).
+Moreover, the whole process is repeated when we proceed to another goal with a similar context.
+In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be similar to the current context, but the naive algorithm does not exploit these similarities.
 
 \section{Incremental Forward Reasoning}%
 \label{sec:incremental}
@@ -578,20 +578,17 @@ This produces the complete match $[h₂, h₃]$, so we can add a new hypothesis 
 
 Implementing the preceding technique efficiently requires some care, particularly in the context of dependent type theory.
 
-\para{Unification.}
-In Lean's type theory, types contain programs and unification is expected to respect definitional equality, i.e.\ equality up to evaluation.
+\para{Matching.}
+In type theory, types contain programs and matching (or, more generally, unification) is expected to respect definitional equality, i.e.\ equality up to evaluation.
 For instance, a theorem with premise $P~2$, where $P$ is some predicate, should apply to a hypothesis of type $P~((\Lam{x}{x})~2)$ since the two types are definitionally equal.
-As a result, unifying premises and hypotheses is arbitrarily expensive in theory and a major cost centre in practice.
-Our technique therefore seeks to minimise the number of unifications performed.
+As a result, matching premises and hypotheses is arbitrarily expensive in theory and a major cost centre in practice.
+We therefore seek to avoid redundant invocations of the matching procedure.
 
-To limit the expense of unification, we perform unification at \emph{reducible} transparency.
+To limit the cost of matching, we match with \emph{reducible transparency}.
 Lean has multiple transparency levels that determine which constants are unfolded.
 \enquote{Reducible} is the most restrictive of these, so we unfold few (and, in practice, only non-recursive) definitions.
-Additionally, we use Lean's usual approximation of higher-order unification, which is complete for first-order unification problems and heuristically solves some higher-order problems.
-Either of these limitations render forward reasoning incomplete, but since the same unification is used throughout Lean, users are used to this.
-
-During unification, we treat metavariables in hypotheses as constants, i.e.\ we never assign them.
-This reflects the expected behaviour of forward rules: given a hypothesis $h : \mvar{x} < \mvar{y}$ and rule $1 < 0 → ⊥$, applying the rule to $h$ would replace $\mvar{x}$ with 1 and $\mvar{y}$ with 0 in all goals where $\mvar{x}$ and $\mvar{y}$ appear, even though this may render some goals unprovable.
+Additionally, we use Lean's usual approximation of higher-order matching, which is complete for first-order matching problems and heuristically solves some higher-order problems.
+Either of these limitations render forward reasoning incomplete, but since the same matching algorithm is used throughout Lean, users are used to this source of incompleteness.
 
 \para{Normal Form.}
 Since the hypothesis index $H$ and the match index $M$ of a rule state have the same domain, we combine them into one map.
@@ -613,8 +610,8 @@ This allows us to use a hash map for the instantiations while still comparing th
 
 There are reasons to believe that this scheme is more efficient than alternative schemes relying on repeated unifications.
 For example, we could use Lean's discrimination trees, which implement a map from expressions to arbitrary data where lookup respects definitional equality.
-However, these discrimination trees are imperfect, so the validity of a lookup result must be verified by unifying the query expression with the expression that was originally stored in the discrimination tree.
-We believe that performing these unifications would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
+However, these discrimination trees are imperfect, so the validity of a lookup result must be verified by matching the query expression against the expression that was originally stored in the discrimination tree.
+We believe that this would generally be more expensive than calculating the RPINF of each hypothesis type (which can be cached).
 
 \para{Match Equivalence.}
 Naively, two matches would be considered equal if they contain the same hypotheses (up to definitional equality, again implemented via RPINF).
@@ -649,8 +646,8 @@ Performing only forward reasoning is the best-case scenario for the incremental 
 When forward reasoning is combined with other rules, we would expect smaller gains, depending on how much reuse the non-forward rules allow.
 
 Instead of the natural number type of Lean's standard library, which has special support in the compiler and kernel, we use a custom type of Peano naturals for the benchmarks.
-Unifying two concrete Peano natural numbers $n$ and $m$ involves comparing $\min(n, m)$ constructors.
-We can therefore use moderately large numbers to simulate the bigger unification problems that Aesop encounters, for example, in Mathlib's category theory development.
+Matching two concrete Peano natural numbers $n$ and $m$ involves comparing $\min(n, m)$ constructors.
+We can therefore use moderately large numbers to simulate the bigger matching problems that Aesop encounters, for example, in Mathlib's category theory development.
 
 Benchmark code and data are available in our supplement~\cite{supplement}.
 The results shown below were obtained on a MacBook Pro with an Apple~M2 Pro processor and \SI{32}{GB} of RAM, averaging over \textcolor{red}{N} (TODO) runs per benchmark.
