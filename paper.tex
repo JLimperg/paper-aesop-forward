@@ -626,9 +626,11 @@ We modified the naive forward reasoning implementation to use the same mechanism
 
 \para{Lazy Insertion.}
 Adding a hypothesis to a rule state is cheap, but not free: it involves one unification for each slot that the hypothesis may match, according to a discrimination tree index, followed by several operations on the variable indices.
-We therefore delay insertions until the index has selected at least one hypothesis for each slot.
-This helps, for example, with the defining rule for involutive functions: if $f : α → α$ is involutive, then for any $a : α$ we have $f (f a) = a$.
-When this rule is used as a forward rule, the premise $a$ matches any non-propositional hypothesis, but with lazy insertion we only process hypotheses for $a$ if there is, in fact, an involutive function in the context.
+We therefore delay insertions in two ways.
+First, we observe that complete matches can only be generated once all slots have been filled.
+Therefore, hypotheses are matched against slots and inserted into the variable indices only once we have found, for each slot, a hypothesis that may match the slot.
+Second, we observe that the variable indices are only queried for hypotheses in a slot $i > 1$ when a match is added to slot $i - 1$.
+Hence we delay the insertion of hypotheses at slot $i > 1$ until there is at least one match in slot $i - 1$.
 
 \section{Evaluation}%
 \label{sec:evaluation}
@@ -958,10 +960,10 @@ The technique is independent of the search strategy and logic used.
 Our evaluation shows substantial speedups on synthetic benchmarks, relative to Aesop's previous implementation.
 
 One obvious extension of our method would be to exploit redundancy not just between contexts of parent and child goals, but also between those of siblings or even unrelated goals.
-This would require no changes to the forward state data structure; we would only need to find pairs of goals that produce minimal diffs.
+This would require no changes to the forward state data structure; we would only need to find pairs of goals that produce small diffs.
 
 \para{Acknowledgements.}
-We thank Jasmin Blanchette and Massin Guerdi for their valuable comments on drafts of this paper.
+We thank Jasmin Blanchette and Massin Guerdi for their very insightful comments on drafts of this paper.
 Généreux's research was co-funded by the European Union (ERC, Nekoka, 101083038) and by the Fonds de recherche du Québec, 330205. Views and opinions expressed are however those of the authors only and do not necessarily reflect those of the European Union or the European Research Council. Neither the European Union nor the granting authority can be held responsible for them.
 
 \bibliography{lit}
