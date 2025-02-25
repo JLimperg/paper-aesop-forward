@@ -257,9 +257,9 @@ Hence, when Aesop selects a forward rule $r$ with $n$ slots of types $A₁, \dot
 
 More specifically, we first match the type of the last slot, $Aₙ$, with each hypothesis $h : B$ (using a discrimination tree index to quickly determine potentially matching hypotheses).
 If successful, this results in a substitution $σ₁$ containing all variables that occur in $Aₙ$.
-We then match $A_{ₙ-1}[σ₁]$ against the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{ₙ-2}[σ₂]$, etc., until we obtain a complete match for $r$.
-If a premise $A_{ₙ-i}[σᵢ]$ does not match any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{ₙ-i+1}$.
-These may lead to a different substitution $τ$ and therefore to different matching hypotheses for $A_{ₙ-i}[τ]$.
+We then match $A_{n-1}[σ₁]$ against the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{n-2}[σ₂]$, etc., until we obtain a complete match for $r$.
+If a premise $A_{n-i}[σᵢ]$ does not match any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{n-i+1}$.
+These may lead to a different substitution $τ$ and therefore to different matching hypotheses for $A_{n-i}[τ]$.
 For each complete match $m$ with substitution $σ$ found during this process, we add a new hypothesis of type $B[σ]$, where $B$ is the conclusion of $r$.
 
 This approach is efficient when the last slot of a rule is not present in the context since the rule is then excluded by indexing and never run.
@@ -778,8 +778,8 @@ The difference for $a = 100$ is even larger.
 
 These results are unsurprising, given the complexity of both algorithms on this benchmark.
 The naive algorithm goes over the context, containing initially $n$ hypotheses, and compares all hypotheses pairwise.
-This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so the overall complexity is $O(n^4)$.
-By contrast, the incremental algorithm considers each hypothesis only once, matching it against both slots and then comparing it with at most $n$ other hypotheses, so the complexity is $O(n^{2})$.
+This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so the overall number of unifications performed is of the order of $n^4$.
+By contrast, the incremental algorithm considers each hypothesis only once, matching it against both slots and then comparing it with at most $n$ other hypotheses. In this case, the number of unifications performed is of the order of $n^{2}$.
 
 Both algorithms generate all possible transitivity chains.
 If only the longest such chain, from $a$ to $a + n$, is desired, the transitivity rule can be registered as a \emph{destruct} rule, a special sort of forward rule that removes from the context any hypotheses it is applied to.
@@ -797,7 +797,7 @@ Still, Fig.~\ref{fig:indep} shows that the incremental approach outperforms the 
 This is because incrementality helps even in this scenario.
 Whenever a hypothesis is added (and hence a new subgoal created), the naive algorithm re-runs all the rules it had already run on the previous subgoal, realising only after the fact that the rules were already applied.
 The incremental algorithm avoids this source of redundancy.
-Accordingly, the naive algorithm has complexity $O(n^{3})$ on this benchmark, versus $O(n)$ for the incremental algorithm.
+Accordingly, the naive algorithm performs $n^{3}$ unifications on this benchmark, versus $n$ for the incremental algorithm.
 
 \begin{figure}
   \centering
