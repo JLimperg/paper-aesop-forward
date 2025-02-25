@@ -248,7 +248,7 @@ The application is type-correct by requirements~\ref{cond:match:matches} and~\re
 If $m$ is complete, then $\sub(m)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
 
 Note that matches represent only those partial applications where arguments are added without gaps.
-Hence for a rule $r : A → B → C → D$, the applications $r~a~\_ : B \to D$ and $r~a~b : D$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\_~b : A \to D$.
+Hence for a rule $r : A → B → C$, the applications $r~a~\_ : B \to C$ and $r~a~b : C$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\_~b : A \to C$.
 This prevents us from constructing $r~a~b$ in two different but ultimately redundant ways.
 The term orders used in various saturation calculi have a similar effect.
 
