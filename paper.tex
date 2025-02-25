@@ -630,8 +630,7 @@ We therefore delay insertions in two ways.
 First, we observe that complete matches can only be generated once all slots have been filled.
 Therefore, hypotheses are matched against slots and inserted into the variable indices only once we have found, for each slot, a hypothesis that may match the slot.
 Second, we observe that the variable indices are only queried for hypotheses in a slot $i > 1$ when a match is added to slot $i - 1$.
-Hence we delay the insertion of hypotheses at slot $i > 1$ until there is at least one match in slot $i - 1$.%
-\footnote{This latter optimisation was suggested by Massin Guerdi.}
+Hence we delay the insertion of hypotheses at slot $i > 1$ until there is at least one match in slot $i - 1$.
 
 \section{Evaluation}%
 \label{sec:evaluation}
