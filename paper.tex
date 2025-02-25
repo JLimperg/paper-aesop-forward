@@ -126,6 +126,7 @@
 \newcommand{\delHyp}{\ensuremath{\mathrm{delHyp}}}
 \newcommand{\addMatch}{\ensuremath{\mathrm{addMatch}}}
 \newcommand{\powerset}{\ensuremath{\mathcal{P}}}
+\newcommand{\bigO}{\ensuremath{\mathcal{O}}}
 
 \begin{document}
 
@@ -778,14 +779,15 @@ The scales are logarithmic, with each dotted horizontal line representing an 8-f
 Hence, for $2^{5} = 32$ hypotheses and $a = 0$, incremental forward reasoning is over 38 times faster than naive forward reasoning.
 The difference for $a = 100$ is even larger.
 
-These results are unsurprising, given the complexity of both algorithms on this benchmark.
-The naive algorithm goes over the context, containing initially $n$ hypotheses, and compares all hypotheses pairwise.
-This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so the overall number of unifications performed is of the order of $n^4$.
-By contrast, the incremental algorithm considers each hypothesis only once, matching it against both slots and then comparing it with at most $n$ other hypotheses. In this case, the number of unifications performed is of the order of $n^{2}$.
+These results are explained by the number of times either algorithm matches a premise against a hypothesis.
+The naive algorithm iterates over the context, which initially contains $n$ hypotheses, and compares all hypotheses pairwise.
+This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so $\bigO(n^4)$ match operations are performed.
+By contrast, the incremental algorithm considers each hypothesis only once, matching it against both slots and then comparing it with at most $n$ other hypotheses.
+It therefore performs only $\bigO(n^2)$ match operations.
 
 Both algorithms generate all possible transitivity chains.
 If only the longest such chain, from $a$ to $a + n$, is desired, the transitivity rule can be registered as a \emph{destruct} rule, a special sort of forward rule that removes from the context any hypotheses it is applied to.
-This reduces the complexity of the incremental algorithm to $O(n)$.
+The incremental algorithm then needs only $\bigO(n)$ match operations.
 
 \para{Independence Benchmark.}
 In the previous example, the incremental algorithm performs well partly because each match at level~1 can be combined with many hypotheses at level~2 without processing the level~1 hypothesis repeatedly.
@@ -799,7 +801,7 @@ Still, Fig.~\ref{fig:indep} shows that the incremental approach outperforms the 
 This is because incrementality helps even in this scenario.
 Whenever a hypothesis is added (and hence a new subgoal created), the naive algorithm re-runs all the rules it had already run on the previous subgoal, realising only after the fact that the rules were already applied.
 The incremental algorithm avoids this source of redundancy.
-Accordingly, the naive algorithm performs $n^{3}$ unifications on this benchmark, versus $n$ for the incremental algorithm.
+Accordingly, the incremental algorithm performs $\bigO(n)$ match operations, versus $\bigO(n^3)$ for the naive algorithm.
 
 \begin{figure}
   \centering
