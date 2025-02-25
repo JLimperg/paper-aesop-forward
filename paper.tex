@@ -919,14 +919,15 @@ We use 100 copies of a rule $r : \All{x}{P_{1}~x → \dots → P_{n}~x → A}$, 
 Given a \emph{depth} $k ≤ n$, the initial goal contains hypotheses of types $P_{i}~a$ for each $i ≠ n - k$ with $1 ≤ i ≤ n$, as well as one hypothesis $P_{n-k}~(a + 1)$ (with $a = 0$ or $a = 100$).
 In other words, the hypotheses match all premises with compatible substitutions, except the $k$th premise from the back.
 Since the naive algorithm processes the premises from back to front, $k$ determines how many premises the algorithm matches before it notices that the rule cannot be applied.
+The incremental algorithm would do a constant amount of work per hypothesis if not for the lazy insertion optimisation, which, in combination with a heuristic that orders the slots such that later premises become earlier slots, produces a similar effect.
 
-This setup is challenging for the incremental algorithm because (1) no rule is ever applied, so incrementality does not help; and (2) the incremental algorithm expends a non-negligible amount of effort for each of the $n$ hypotheses, whereas the naive algorithm can, at least for small $k$, decide fairly quickly that the rule is not applicable.
-And indeed, Fig.~\ref{fig:erase-noprecomp} shows that while the naive approach slows down for greater $k$ (though not by much since the context contains only $n = 6$ hypotheses), big constant factors cause the incremental approach to remain slower for $k$ up to 5.
+This setup is challenging for the incremental algorithm because no rule is ever applied, so incrementality does not help.
+And indeed, Fig.~\ref{fig:erase-noprecomp} shows that while both approaches slow down for greater $k$ (though not by much since the context contains only $n = 6$ hypotheses), the incremental approach remains slower for $k$ up to 5.
 
-Fig.~\ref{fig:erase-precomp}, however, shows a different picture, with the incremental approach leading for all $k > 1$.
+Fig.~\ref{fig:erase-precomp}, however, shows a different picture, with the incremental approach leading for all values of $k$.
 The figure visualises the results of the depth benchmark with \emph{precompilation} enabled.
 This is a feature of Lean that compiles tactics ahead of time instead of interpreting them.
-Our technique appears to benefit from this much more than the naive approach, perhaps because the RPINF calculation incurs a large interpretation overhead.
+Our technique benefits from this much more than the naive approach, likely because calculating RPINFs incurs a large interpretation overhead.
 We observe the same effect when enabling precompilation for the other benchmarks.
 Unfortunately, precompilation also substantially increases Aesop's build time and slows down Lean's build tool, Lake, so we disable it by default, but users of Aesop can choose to enable it for faster forward reasoning.
 
