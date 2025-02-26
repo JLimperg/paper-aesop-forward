@@ -1,12 +1,8 @@
 \documentclass[runningheads,leqno]{llncs}
 
-% TODO: standardise indices vs indexes
-% TODO: standardise dots after equations
-% TODO: rename variable maps to variable indices everywhere
-% TODO: Title Case for paragraphs
 % TODO: check over/underfull boxes
+% TODO: move references to new page
 % TODO: ensure that numbers in evaluation discussion match the final data
-% TODO: process Massin's minor feedback points
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -259,14 +255,14 @@ Before this work, Aesop used what we call \emph{naive forward reasoning}~\cite{A
 This approach treats forward rules essentially like any other Aesop rule.
 Hence, when Aesop selects a forward rule $r$ with $n$ slots of types $A₁, \dots, Aₙ$ as the highest-priority rule currently applicable to a goal $Γ ⊢ T$, we look for all complete matches for $r$ in $Γ$, using an approach reminiscent of backtracking subsumption algorithms.
 
-More specifically, we first match the type of the last slot, $Aₙ$, with each hypothesis $h : B$ (using a discrimination tree index to quickly determine potentially matching hypotheses).
+More specifically, we first match the type of the last slot, $Aₙ$, with each hypothesis $h : B$ (using an imperfect discrimination tree index to quickly determine potentially matching hypotheses).
 If successful, this results in a substitution $σ₁$ containing all variables that occur in $Aₙ$.
 We then match $A_{n-1}[σ₁]$ against the type of each hypothesis in the context, yielding a substitution $σ₂$, and proceed with $A_{n-2}[σ₂]$, etc., until we obtain a complete match for $r$.
 If a premise $A_{n-i}[σᵢ]$ does not match any hypothesis type, we backtrack and consider other potential matching hypotheses for $A_{n-i+1}$.
 These may lead to a different substitution $τ$ and therefore to different matching hypotheses for $A_{n-i}[τ]$.
-For each complete match $m$ with substitution $σ$ found during this process, we add a new hypothesis of type $B[σ]$, where $B$ is the conclusion of $r$.
+For each complete match $m$ with substitution $σ$ found during this process, we add a new hypothesis of type $C[σ]$, where $C$ is the conclusion of $r$.
 
-This approach is efficient when the last slot of a rule is not present in the context since the rule is then excluded by indexing and never run.
+This approach is efficient when the last slot of a rule does not match any hypothesis in the context since the rule is then usually excluded by indexing and never run.
 Otherwise, we match large numbers of premises and hypotheses against each other, though this process could likely be sped up heuristically~\cite{TammetSubsumption}.
 Moreover, the whole process is repeated when we proceed to another goal with a similar context.
 In particular, the contexts of subgoals produced by whatever rule is eventually applied to the current goal are likely to be similar to the current context, but the naive algorithm does not exploit these similarities.
@@ -283,9 +279,9 @@ Our main contribution is a data structure, the \emph{forward state}, that allows
 We associate with each goal in Aesop's search tree a forward state that reflects the goal's context.
 Let $\States$ be the set of forward states, $\Hyps$ the set of hypotheses, $\Rules$ the set of rules, $\CMatches$ the set of complete matches and $\powerset(X)$ the powerset of $X$.
 The forward state's interface then consists of two functions
-\begin{equation*}
+\[
   \addHyp : \States → \Hyps → \States × \powerset(\Rules × \CMatches) \qquad \delHyp : \States → \Hyps → \States
-\end{equation*}
+\]
 The $\addHyp$ function adds a hypothesis to the forward state.
 Hence, if $s$ is the forward state corresponding to context $Γ$ and $\addHyp(s,\, h : T) = (s', C)$, then $s'$ is the forward state corresponding to $Γ,\, h : T$.
 Similarly, if $s$ is the forward state corresponding to $Γ,\, h : T$, then $\delHyp(s,\, h : T)$ is the forward state corresponding to $Γ$.
@@ -621,7 +617,7 @@ The complete matches $m₁ ≔ [h₁, h₃]$ and $m₁' ≔ [h₁, h₄]$ contai
 Generating both $m₁$ and $m₁'$ would therefore be redundant.
 Similarly, the partial matches $m₂ ≔ [h₁]$ and $m₂' ≔ [h₂]$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete them.
 Hence we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
-Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ with conclusion $A$ equal if $\lvl(m) = \lvl(m')$ and for each premise $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
+Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ equal if $\lvl(m) = \lvl(m')$ and for each premise $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
 
 \para{Redundant Hypotheses.}
 When we find a complete match, we add a new hypothesis of the corresponding type $T$ to the goal, but only if there is no other hypothesis of type $T$ already present.
@@ -632,7 +628,7 @@ We modified the naive forward reasoning implementation to use the same mechanism
 Adding a hypothesis to a rule state is cheap, but not free: it involves one unification for each slot that the hypothesis may match, according to a discrimination tree index, followed by several operations on the variable indices.
 We therefore delay insertions in two ways.
 First, we observe that complete matches can only be generated once all slots have been filled.
-Therefore, hypotheses are matched against slots and inserted into the variable indices only once we have found, for each slot, a hypothesis that may match the slot.
+Therefore, hypotheses are matched against slots and inserted into the variable indices only once we have found a potentially matching hypothesis for each slot.
 Second, we observe that the variable indices are only queried for hypotheses at a slot $i > 1$ when a match is added at slot $i - 1$.
 Hence we delay the insertion of hypotheses at $i$ until there is at least one match in slot $i - 1$.
 
