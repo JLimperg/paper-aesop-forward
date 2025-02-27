@@ -2,7 +2,6 @@
 
 % TODO: check over/underfull boxes
 % TODO: move references to new page
-% TODO: ensure that numbers in evaluation discussion match the final data
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -775,10 +774,10 @@ Saturating this goal adds $n(n-1)/2$ hypotheses to the context.
 
 Fig.~\ref{fig:trans} shows that the incremental algorithm has a sizeable advantage over the naive algorithm.
 The scales are logarithmic, with each dotted horizontal line representing an 8-fold increase.
-Hence, for $2^{5} = 32$ hypotheses and $a = 0$, incremental forward reasoning is over 38 times faster than naive forward reasoning.
-The difference for $a = 100$ is even larger.
+Hence, for $2^{5} = 32$ hypotheses and $a = 0$, incremental forward reasoning is over 42 times faster than naive forward reasoning.
+The speedup for $a = 100$ is around 99x, with naive forward reasoning taking over 6 minutes.
 
-These results are explained by the number of times either algorithm matches a premise against a hypothesis.
+These results are largely explained by the number of times either algorithm matches a premise against a hypothesis.
 The naive algorithm iterates over the context, which initially contains $n$ hypotheses, and compares all hypotheses pairwise.
 This is repeated approximately for each of the $n(n-1)/2$ added hypotheses, so $\bigO(n^4)$ match operations are performed.
 By contrast, the incremental algorithm considers each hypothesis only once, matching it against both slots and then comparing it with at most $n$ other hypotheses.
