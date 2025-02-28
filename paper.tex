@@ -1,8 +1,5 @@
 \documentclass[runningheads,leqno]{llncs}
 
-% TODO: check over/underfull boxes
-% TODO: move references to new page
-
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
@@ -169,7 +166,7 @@ Tactics implement arbitrary inferences; in particular, they can remove any hypot
 
 ACL2, PVS and Aesop additionally provide special support for \emph{forward reasoning}, also known as \emph{forward chaining}, in the form of \emph{forward rules}.
 Given, for example, the transitivity lemma $\All{x~y~z}{x < y → y < z → x < z}$, a forward rule run on the goal $h₁ : a < b,\, h₂ : b < c ⊢ A$ produces the single subgoal $h₁ : a < b,\, h₂ : b < c,\, h₃ : a < c ⊢ A$.
-Hence forward rules can be used to establish additional facts that may be relevant for other rules.
+Hence, forward rules can be used to establish additional facts that may be relevant for other rules.
 For example, the Aeneas project~\cite{Aeneas} uses Aesop's forward rules in its proof automation to establish facts that are later used by an arithmetic decision procedure.
 
 Until recently, Aesop used what we call the \emph{naive algorithm} to apply forward rules.
@@ -181,7 +178,7 @@ More generally, any backwards rule leaves the context unchanged, and many rules 
 In this paper, we present an alternative way to apply forward rules that addresses this issue.
 The central idea is to remember, for each goal $Γ ⊢ A$, which forward rules can be partially applied to which sets of hypotheses.
 When a non-forward rule then generates subgoals $Δ₁ ⊢ A₁$, \dots, $Δₙ ⊢ Aₙ$, the new contexts $Δᵢ$ are likely similar to $Γ$.
-Hence it is generally cheaper (and often much cheaper) to start with the partial matches for $Γ$ and update them for each of the $Δᵢ$.
+Hence, it is generally cheaper (and often much cheaper) to start with the partial matches for $Γ$ and update them for each of the $Δᵢ$.
 The update first deletes partial matches that include hypotheses no longer present in $Δᵢ$.
 Afterwards it adds new partial matches for the hypotheses that are new in $Δᵢ$, extending the existing partial matches for a rule if the new hypothesis is compatible with them.
 Whenever this process produces a full match---i.e., all premises of a forward rule are satisfied by a set of hypothesis in $Δᵢ$---the rule is applied and adds a corresponding new hypothesis to $Δᵢ$.
@@ -234,16 +231,16 @@ A match $m$ must additionally satisfy the following requirements:
         This means that the substitutions agree on all common variables, i.e.\ for each variable $x ∈ \dom(\sub_{i}(m(i))) ∩ \dom(\sub_{j}(m(j)))$ we have $\sub_{i}(m(i))(x) = \sub_{j}(m(j))(x)$.
 \end{enumerate}
 The \emph{substitution of a match $m$}, $\sub(m)$, is the union of the substitutions induced by the hypotheses in $m$, i.e. $\sub(m) ≔ ⋃_{i ∈ \dom(m)}\sub_{i}(m(i))$.
-This is well defined by requirement~\ref{cond:match:compat}.
+This is well-defined by requirement~\ref{cond:match:compat}.
 The \textit{level of a match $m$}, $\lvl(m)$, is the length of $m$.
 A match for rule $r$ is \textit{complete} if $i ∈ \dom(M)$ for every slot $i$ of $r$, and \emph{partial} otherwise.
 
 A partial match $m$ for rule $r$ corresponds to a partial application of the rule to the terms given in $\sub(M)$.
 The application is type-correct by requirements~\ref{cond:match:matches} and~\ref{cond:match:compat}.
-If $m$ is complete, then $\sub(m)$ contains a term for every slot and every variable---hence for every premise---of $r$ and we have a full application.
+If $m$ is complete, then $\sub(m)$ contains a term for every slot and every variable---hence for every premise---of $r$, and we have a full application.
 
 Note that matches represent only those partial applications where arguments are added without gaps.
-Hence for a rule $r : A → B → C$, the applications $r~a~\_ : B \to C$ and $r~a~b : C$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\_~b : A \to C$.
+Hence, for a rule $r : A → B → C$, the applications $r~a~\_ : B \to C$ and $r~a~b : C$ for some $a : A$ and $b : B$ correspond to matches, but not $r~\_~b : A \to C$.
 This prevents us from constructing $r~a~b$ in two different but ultimately redundant ways.
 The term orders used in various saturation calculi have a similar effect.
 
@@ -326,7 +323,7 @@ Matches for the maximal slot are not stored because, being complete, they never 
 We write $M_{x}(i, t)$ instead of $M(x, i, t)$ and $H_{x}(i, t)$ instead of $H(x, i, t)$.
 
 Given a hypothesis $h : T$ that matches slot $i > 1$ with substitution $σ = \sub_{i}(h)$, the partial matches that can be extended by $h$ are those in slot $i - 1$ whose substitutions are compatible with $σ$ on the variables $\vars(i)$ (i.e., the variables shared between $i$ and any earlier slot).
-Assuming for the moment that $\vars(i)$ is nonempty for all slots $i > 1$, these matches are
+Assuming for the moment that $\vars(i)$ is non-empty for all slots $i > 1$, these matches are
 \[
   \bigcap_{x \in \vars(i)} M_{x}(i-1, σ(x))
 \]
@@ -402,11 +399,11 @@ While adding matches, we may discover new complete matches, which are collected 
 
 The rule state's $\addMatch$ method (Algorithm~\ref{alg:addmatch}) adds a match $m$ with level $i = \lvl(m)$ to the rule state.
 If $m$ is already complete, it is returned.
-Otherwise $m$ is inserted into $M$ and we query $H$ for hypotheses that can extend $m$.
+Otherwise, $m$ is inserted into $M$ and we query $H$ for hypotheses that can extend $m$.
 Any extended matches thus produced are added to the rule state recursively.
 
 \para{Variable Clusters.}
-We have so far only considered rules where for each slot $i > 1$, the set of shared variables $\vars(i)$ is nonempty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
+We have so far only considered rules where for each slot $i > 1$, the set of shared variables $\vars(i)$ is non-empty, i.e.\ each slot shares at least one variable with at least one of the previous slots.
 However, there are also rules such as $\All{x~y}{P~x → Q~y → R~x~y}$, where slot~2 ($Q~y$) shares no variables with slot~1 ($P~x$).
 In this case, any match at level 1 can be extended with any hypothesis at level 2, since the two slots are independent.
 
@@ -484,9 +481,9 @@ At this point, $H$ and $M$ are in state~\eqref{eq:example1:state1}, shown below.
 Now we add $h₂ : a ≤ b$, which again unifies with both slots.
 For slot~1, $\sub₁(h₂)(y) = b$, so we add the match $[h₂]$ to $M_{y}(1, b)$.
 We then check for hypotheses in slot~2 that also instantiate $y$ with $b$, and indeed we find $H_{y}(2, b) = \{h₁\}$.
-Hence we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : a ≤ c$ to be added later.
+Hence, we return the complete match $[h₂, h₁]$, which induces a new hypothesis $h₃ : a ≤ c$ to be added later.
 For slot~2, we add $h₂$ to $H_{y}(2, a)$.
-There are no compatible matches at level~1 so we are done with $h₂$, yielding the final rule state~\eqref{eq:example1:state2}.
+There are no compatible matches at level~1, so we are done with $h₂$, yielding the final rule state~\eqref{eq:example1:state2}.
 
 \para{Example 2.}
 We now consider a rule $r₂ : \All{x~y}{A~x~y → B~x~y → C~x~y}$ with multiple shared variables.
@@ -525,7 +522,7 @@ We then add $h_2 : A~a~b$, which initially generates a match $m = [h₂]$ that i
 
 To find hypotheses compatible with $m$, we consider the set of variables $\vars(\lvl(m) + 1)$.
 These are the variables shared between slot~$\lvl(m) + 1 = 2$ and all previous slots, i.e.\ $x$ and $y$.
-Hence the compatible hypotheses are
+Hence, the compatible hypotheses are
 \[
   \bigcap_{x \in \vars(\lvl(m) + 1)} H_{x}(i + 1, \sub(m)(x)) = H_{x}(2, a) \cap H_{y}(2, b) = \emptyset
 \]
@@ -601,7 +598,7 @@ This is justified because Lean's type theory definitionally equates any two proo
 When computing the RPINF, we also mark all proofs occurring in it with some special \enquote{metadata}.
 
 With this setup, two expressions $t$ and $u$ are definitionally equal at reducible transparency if and only if their RPINFs are syntactically equal except for the marked proof subexpressions.
-This notion of equality is syntactic, so it can be checked quickly and we can define an effective hash function that is compatible with it.
+This notion of equality is syntactic, so it can be checked quickly, and we can define an effective hash function that is compatible with it.
 This allows us to use a hash map for the instantiations while still comparing them up to definitional equality.
 
 There are reasons to believe that this scheme is more efficient than alternative schemes relying on repeated unifications.
@@ -615,7 +612,7 @@ However, consider the rule $r : \All{x~y}{P~x~y → Q~x~z → R~x}$ and the hypo
 The complete matches $m₁ ≔ [h₁, h₃]$ and $m₁' ≔ [h₁, h₄]$ contain different hypotheses, but the difference does not matter because the applications $r~h₁~h₃$ and $r~h₁~h₄$ both have type $R~a$.
 Generating both $m₁$ and $m₁'$ would therefore be redundant.
 Similarly, the partial matches $m₂ ≔ [h₁]$ and $m₂' ≔ [h₂]$ are redundant because the choice between $h₁$ and $h₂$ affects neither the type of any eventual application derived from $m₂$ and $m₂'$ nor the hypotheses that can be used to complete them.
-Hence we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
+Hence, we should store only one of $m₂$ and $m₂'$ in the rule state of $r$.
 Based on these observations, we consider two matches $m$ and $m'$ of a rule $r$ equal if $\lvl(m) = \lvl(m')$ and for each premise $x$ that appears either in the conclusion of $r$ or in the type of a slot $i$ of $r$ with $i > \lvl(m)$ we have $\sub(m)(x) = \sub(m')(x)$.
 
 \para{Redundant Hypotheses.}
@@ -629,7 +626,7 @@ We therefore delay insertions in two ways.
 First, we observe that complete matches can only be generated once all slots have been filled.
 Therefore, hypotheses are matched against slots and inserted into the variable indices only once we have found a potentially matching hypothesis for each slot.
 Second, we observe that the variable indices are only queried for hypotheses at a slot $i > 1$ when a match is added at slot $i - 1$.
-Hence we delay the insertion of hypotheses at $i$ until there is at least one match in slot $i - 1$.
+Hence, we delay the insertion of hypotheses at $i$ until there is at least one match in slot $i - 1$.
 
 \section{Evaluation}%
 \label{sec:evaluation}
@@ -638,7 +635,7 @@ There are unfortunately no standard benchmarks for Aesop-like tactics, and since
 Additionally, forward rules are little used by Aesop's main client, the Mathlib library~\cite{Mathlib}.
 We therefore only evaluate our technique against the previous, naive Aesop implementation on several synthetic benchmarks that demonstrate the performance characteristics of incremental forward reasoning.
 
-For each benchmark, we set up certain forward rules and a goal with handpicked hypotheses.
+For each benchmark, we set up certain forward rules and a goal with hand-picked hypotheses.
 We then run the \texttt{saturate} tactic, which uses either naive or incremental forward reasoning to exhaustively apply the forward rules.
 Performing only forward reasoning is the best-case scenario for the incremental algorithm since previous results can be fully reused.
 When forward reasoning is combined with other rules, we would expect smaller gains, depending on how much reuse the non-forward rules allow.
